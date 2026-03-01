@@ -1,0 +1,19 @@
+FROM eclipse-temurin:21-jdk-alpine AS build
+WORKDIR /app
+
+COPY pom.xml .
+COPY mvnw .
+COPY .mvn .mvn
+
+RUN ./mvnw dependency:go-offline -B
+COPY src src
+RUN ./mvnw package -DskipTests -B
+
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+RUN apk add --no-cache dumb-init
+COPY --from=build /app/target/*.jar app.jar
+RUN adduser -D appuser && chown -R appuser /app
+USER appuser
+EXPOSE 8080
+ENTRYPOINT ["dumb-init", "java", "-jar", "app.jar"]

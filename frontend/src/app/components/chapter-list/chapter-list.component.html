@@ -1,0 +1,35 @@
+<div class="chapter-list">
+  <h2>Downloaded chapters</h2>
+  @if (loading()) {
+    <p class="loading">Loading...</p>
+  } @else if (chapters().length === 0) {
+    <p class="empty">No chapters yet. Use the form above to add a chapter.</p>
+  } @else {
+    <ul class="list">
+      @for (ch of chapters(); track ch.id) {
+        <li class="item">
+          <a [routerLink]="['/chapters', ch.id]" class="link">
+            <span class="title">{{ ch.mangaTitle ?? 'Manga' }} – Ch. {{ ch.chapterNumber ?? '?' }}</span>
+            @if (ch.title) {
+              <span class="subtitle">{{ ch.title }}</span>
+            }
+            <span class="meta">{{ (ch.panelsDownloaded ?? 0) }} / {{ ch.totalPanels }} panels · {{ ch.downloadedAt | date:'short' }}</span>
+            @if (isDownloading(ch)) {
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width]="progressPercent(ch) + '%'"></div>
+              </div>
+            }
+          </a>
+          <button type="button" class="btn-delete" (click)="deleteChapter(ch.id, $event)" title="Delete">×</button>
+        </li>
+      }
+    </ul>
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button [disabled]="currentPage() === 0" (click)="load(currentPage() - 1)">←</button>
+        <span>Page {{ currentPage() + 1 }} / {{ totalPages() }}</span>
+        <button [disabled]="currentPage() >= totalPages() - 1" (click)="load(currentPage() + 1)">→</button>
+      </div>
+    }
+  }
+</div>

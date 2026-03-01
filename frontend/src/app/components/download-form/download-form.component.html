@@ -1,0 +1,30 @@
+<div class="download-form">
+  <h2>Download chapter</h2>
+  <p class="hint">Paste a chapter URL from MangaDex, GlobalComix, or MangaPlus</p>
+  <form (ngSubmit)="onSubmit()">
+    <div class="input-row">
+      <input
+        type="url"
+        [(ngModel)]="chapterUrl"
+        name="chapterUrl"
+        placeholder="https://mangadex.org/chapter/... or globalcomix.com/... or mangaplus.shueisha.co.jp/..."
+        [disabled]="loading()"
+      />
+      <button type="submit" [disabled]="loading()">
+        {{ loading() ? 'Downloading...' : 'Download' }}
+      </button>
+    </div>
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+    @if (progress() && loading()) {
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width]="(progress()!.current / progress()!.total) * 100 + '%'"></div>
+        <span class="progress-text">Fetching metadata and starting download...</span>
+      </div>
+    }
+    @if (loading()) {
+      <p class="status-info">Request sent. If the chapter is large, panels will download in the background. The list below updates every few seconds.</p>
+    }
+  </form>
+</div>

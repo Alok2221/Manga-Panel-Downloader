@@ -1,0 +1,35 @@
+<div class="panel-gallery">
+  @if (loading()) {
+    <p class="loading">Loading panels...</p>
+  } @else {
+    <div class="header">
+      <a routerLink="/" class="back">← Chapter list</a>
+      @if (chapter(); as ch) {
+        <h1>{{ ch.mangaTitle ?? 'Manga' }} – Ch. {{ ch.chapterNumber ?? '?' }}</h1>
+        @if (ch.title) {
+          <p class="subtitle">{{ ch.title }}</p>
+        }
+      }
+    </div>
+    <div class="grid">
+      @for (panel of panels(); track panel.id) {
+        <div class="panel-card">
+          <img
+            [src]="panelImageUrl(panel.id)"
+            [alt]="'Page ' + panel.pageNumber"
+            loading="lazy"
+          />
+          <div class="actions">
+            <span class="page-num">Page {{ panel.pageNumber }}</span>
+            <button type="button" class="btn-download" (click)="downloadPanel(panel, $event)">
+              Download
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+    @if (panels().length === 0 && !loading()) {
+      <p class="empty">No panels yet. The chapter may still be downloading.</p>
+    }
+  }
+</div>
