@@ -1,6 +1,6 @@
 # Manga Panel Downloader
 
-Full-stack application for downloading and storing manga chapter panels from MangaDex, GlobalComix, and MangaPlus. Enter a chapter URL, download all pages, and browse them in a local gallery.
+Full-stack application for downloading and storing manga chapter panels from **MangaDex**. Enter a chapter URL, download all pages, and browse them in a local gallery.
 
 ## Tech stack
 
@@ -9,13 +9,11 @@ Full-stack application for downloading and storing manga chapter panels from Man
 - **Database:** PostgreSQL
 - **Containers:** Docker + Docker Compose
 
-## Supported sources
+## Supported source
 
 | Source | URL pattern |
 |--------|-------------|
 | MangaDex | `https://mangadex.org/chapter/{uuid}` |
-| GlobalComix | `https://globalcomix.com/...` |
-| MangaPlus | `https://mangaplus.shueisha.co.jp/viewer/{id}` |
 
 ## Requirements
 
@@ -72,6 +70,16 @@ Environment variables (optional; set before `docker compose up` or in shell):
 | DELETE | `/api/chapters/{id}` | Delete chapter |
 | GET | `/api/search` | Search (params: `title`, `chapter`, `page`, `size`) |
 
+## MangaDex acceptable usage
+
+This project uses the **public MangaDex API** and is intended strictly for personal / educational use.
+
+- **We credit MangaDex** as the manga data and image provider.
+- **We credit scanlation groups** indirectly by always showing the chapter metadata returned by MangaDex, and we are prepared to honor any content removal requests that reach us through MangaDex or the scanlation groups.
+- **We do not run ads, tracking, or paid services** in this project. The application is purely non-commercial.
+
+If you deploy this project publicly, you are responsible for ensuring continued compliance with the latest MangaDex acceptable usage policy.
+
 ## Project structure
 
 ```
@@ -81,8 +89,7 @@ MangaPanel/
 │   ├── service/        # ChapterService, PanelService, ChapterDownloadService
 │   ├── repository/     # JPA
 │   ├── entity/         # Manga, Chapter, Panel
-│   ├── client/         # MangaDex, GlobalComix API clients
-│   ├── source/         # ChapterSourceProvider implementations
+│   ├── client/         # MangaDex API client
 │   ├── config/
 │   └── dto/
 ├── frontend/           # Angular app
