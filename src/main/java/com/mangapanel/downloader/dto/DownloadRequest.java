@@ -12,7 +12,9 @@ import lombok.NoArgsConstructor;
 public class DownloadRequest {
 
     @NotBlank(message = "URL is required")
-    @Pattern(regexp = "https?://(www\\.)?(mangadex\\.org|globalcomix\\.com|mangaplus\\.shueisha\\.co\\.jp)[^\\s]*",
-            message = "URL must be a chapter page from MangaDex, GlobalComix, or MangaPlus")
+    @Pattern(
+            regexp = "(?i)^(https?://)?(www\\.)?mangadex\\.org/chapter/[a-f0-9-]{36}/?$",
+            message = "URL must be a MangaDex chapter page (https://mangadex.org/chapter/...)"
+    )
     private String chapterUrl;
 }

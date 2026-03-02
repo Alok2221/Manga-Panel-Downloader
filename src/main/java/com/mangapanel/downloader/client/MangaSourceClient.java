@@ -12,7 +12,10 @@ import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,7 +25,7 @@ public class MangaSourceClient {
 
     private static final Logger log = LoggerFactory.getLogger(MangaSourceClient.class);
     private static final Pattern CHAPTER_URL_PATTERN = Pattern.compile(
-            "https?://(www\\.)?mangadex\\.org/chapter/([a-f0-9-]{36})",
+            "(?:https?://)?(www\\.)?mangadex\\.org/chapter/([a-f0-9-]{36})(?:/)?",
             Pattern.CASE_INSENSITIVE
     );
     private static final String CHAPTER_API = "https://api.mangadex.org/chapter";
@@ -133,6 +136,39 @@ public class MangaSourceClient {
 
     public int getHttpTimeoutSeconds() {
         return HTTP_TIMEOUT_SECONDS;
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> searchManga(String title, int limit) {
+        WebClient client = webClientBuilder.build();
+        String encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8);
+        String url = MANGA_API + "?title=" + encodedTitle + "&limit=" + limit;
+        return client.get()
+                .uri(url)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .timeout(Duration.ofSeconds(HTTP_TIMEOUT_SECONDS))
+                .block();
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> listChaptersForManga(String mangaId, int limit, int offset, String translatedLanguage) {
+        WebClient client = webClientBuilder.build();
+        StringBuilder sb = new StringBuilder(CHAPTER_API)
+                .append("?manga=").append(mangaId)
+                .append("&limit=").append(limit)
+                .append("&offset=").append(offset);
+        if (translatedLanguage != null && !translatedLanguage.isBlank()) {
+            sb.append("&translatedLanguage[]=")
+                    .append(URLEncoder.encode(translatedLanguage, StandardCharsets.UTF_8));
+        }
+        String url = sb.toString();
+        return client.get()
+                .uri(url)
+                .retrieve()
+                .bodyToMono(Map.class)
+                .timeout(Duration.ofSeconds(HTTP_TIMEOUT_SECONDS))
+                .block();
     }
 
     public static class MangaSourceException extends RuntimeException {

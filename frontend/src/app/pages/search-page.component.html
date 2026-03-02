@@ -1,0 +1,43 @@
+<div class="page search-page">
+  <header class="page-header">
+    <div>
+      <h2>Search chapters</h2>
+      <p>Filter downloaded chapters by manga title and chapter number.</p>
+    </div>
+  </header>
+
+  <section class="search-controls">
+    <div class="field">
+      <label for="title">Manga title</label>
+      <input
+        id="title"
+        type="text"
+        placeholder="e.g. Bleach"
+        #titleInput
+        (input)="onSearchChange(titleInput.value, chapterInput.value)"
+      />
+    </div>
+
+    <div class="field">
+      <label for="chapter">Chapter</label>
+      <input
+        id="chapter"
+        type="number"
+        min="0"
+        step="1"
+        placeholder="e.g. 336"
+        #chapterInput
+        (input)="onSearchChange(titleInput.value, chapterInput.value)"
+      />
+    </div>
+  </section>
+
+  <section class="results">
+    <app-chapter-list
+      [refreshTrigger]="refreshListTrigger()"
+      [searchTitle]="searchTitle()"
+      [searchChapter]="searchChapterNum()"
+    />
+  </section>
+</div>
+

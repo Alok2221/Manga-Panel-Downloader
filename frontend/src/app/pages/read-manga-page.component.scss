@@ -1,0 +1,105 @@
+.page {
+  color: var(--text-main);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+
+  h2 {
+    margin: 0 0 0.35rem;
+    font-size: 1.4rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+}
+
+.last-read {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.3rem;
+
+  .label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-soft);
+  }
+
+  button {
+    border-radius: 999px;
+    padding: 0.4rem 0.9rem;
+    border: 1px solid rgba(56, 189, 248, 0.7);
+    background: radial-gradient(circle at top, rgba(56, 189, 248, 0.24), transparent 60%),
+                rgba(15, 23, 42, 0.9);
+    color: #e0f2fe;
+    font-size: 0.82rem;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    cursor: pointer;
+    min-width: 220px;
+  }
+
+  .title {
+    font-weight: 500;
+  }
+
+  .meta {
+    font-size: 0.78rem;
+    opacity: 0.85;
+  }
+}
+
+.manga-selector {
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-soft);
+  }
+
+  input {
+    padding: 0.6rem 0.85rem;
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.55);
+    background: rgba(15, 23, 42, 0.9);
+    color: var(--text-main);
+    font-size: 0.9rem;
+
+    &:focus {
+      outline: none;
+      border-color: var(--accent-alt);
+      box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.6);
+    }
+  }
+
+  .hint {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-soft);
+  }
+}
+
+.chapters-shell {
+  border-radius: 14px;
+  background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.1), transparent 65%),
+              radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.14), transparent 70%),
+              rgba(15, 23, 42, 0.9);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  padding: 1rem 1.1rem 1.25rem;
+}
+

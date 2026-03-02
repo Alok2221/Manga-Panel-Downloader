@@ -21,14 +21,16 @@ export class DownloadFormComponent {
   constructor(private api: ApiService) {}
 
   onSubmit(): void {
-    const url = this.chapterUrl.trim();
+    let url = this.chapterUrl.trim();
     if (!url) {
       this.error.set('Enter a chapter page URL.');
       return;
     }
-    const supported = ['mangadex.org', 'globalcomix.com', 'mangaplus.shueisha.co.jp'];
-    if (!supported.some(d => url.includes(d))) {
-      this.error.set('Use a chapter URL from MangaDex, GlobalComix, or MangaPlus.');
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = `https://${url}`;
+    }
+    if (!url.includes('mangadex.org/chapter/')) {
+      this.error.set('Use a MangaDex chapter URL (https://mangadex.org/chapter/...).');
       return;
     }
     this.error.set(null);

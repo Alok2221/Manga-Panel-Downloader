@@ -8,9 +8,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,13 +18,11 @@ public class PanelService {
     private final PanelRepository panelRepository;
 
     public List<PanelDto> findByChapterId(Long chapterId) {
-        return panelRepository.findByChapterIdOrderByPageNumberAsc(chapterId).stream()
-                .map(this::toDto)
-                .toList();
+        return panelRepository.findDtosByChapterId(chapterId);
     }
 
     public Page<PanelDto> findByChapterId(Long chapterId, Pageable pageable) {
-        return panelRepository.findByChapterIdOrderByPageNumberAsc(chapterId, pageable).map(this::toDto);
+        return panelRepository.findDtosByChapterId(chapterId, pageable);
     }
 
     public Optional<Panel> findById(Long id) {
@@ -35,34 +30,25 @@ public class PanelService {
     }
 
     public Optional<byte[]> getImageBytes(Long panelId) {
-        return panelRepository.findById(panelId)
-                .filter(p -> p.getLocalPath() != null)
-                .map(p -> {
-                    try {
-                        return Files.readAllBytes(Path.of(p.getLocalPath()));
-                    } catch (IOException e) {
-                        return null;
-                    }
-                });
+        return panelRepository.findDataById(panelId);
     }
 
     public Optional<String> getContentType(Long panelId) {
-        return panelRepository.findById(panelId)
-                .map(p -> {
-                    String format = p.getFormat() != null ? p.getFormat().toLowerCase() : "png";
-                    return switch (format) {
-                        case "jpg", "jpeg" -> "image/jpeg";
-                        case "gif" -> "image/gif";
-                        case "webp" -> "image/webp";
-                        default -> "image/png";
-                    };
-                });
+        return panelRepository.findFormatById(panelId).map(fmt -> {
+            String format = fmt != null ? fmt.toLowerCase() : "png";
+            return switch (format) {
+                case "jpg", "jpeg" -> "image/jpeg";
+                case "gif" -> "image/gif";
+                case "webp" -> "image/webp";
+                default -> "image/png";
+            };
+        });
     }
 
     public PanelDto toDto(Panel p) {
         return PanelDto.builder()
                 .id(p.getId())
-                .chapterId(p.getChapter() != null ? p.getChapter().getId() : null)
+                .chapterId(p.getChapterId())
                 .pageNumber(p.getPageNumber())
                 .imageUrl(p.getImageUrl())
                 .localPath(p.getLocalPath())

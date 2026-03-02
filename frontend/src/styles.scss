@@ -1,25 +1,81 @@
 /* Global styles and variables */
 :root {
-  --accent: #2563eb;
-  --error: #dc2626;
-  --border: #e5e7eb;
-  --gray-50: #f9fafb;
-  --gray-100: #f3f4f6;
-  --gray-200: #e5e7eb;
-  --gray-500: #6b7280;
-  --gray-600: #4b5563;
-  --gray-700: #374151;
+  /* Brand colors */
+  --green: #22c55e;
+  --green-soft: #15803d;
+  --purple: #8b5cf6;
+  --purple-soft: #6d28d9;
+
+  /* Accent + states */
+  --accent: var(--green);
+  --accent-soft: rgba(34, 197, 94, 0.18);
+  --accent-strong: #4ade80;
+  --accent-alt: var(--purple);
+  --accent-alt-soft: rgba(139, 92, 246, 0.18);
+  --error: #f97373;
+
+  /* Neutral palette for dark background */
+  --bg-main: #020617;       /* almost black */
+  --bg-elevated: #020817;   /* slightly lighter */
+  --bg-card: #020617;
+  --bg-soft: #020617;
+  --border: rgba(148, 163, 184, 0.35);
+
+  --text-main: #e5e7eb;
+  --text-muted: #94a3b8;
+  --text-soft: #64748b;
+
+  --chip-success-bg: rgba(34, 197, 94, 0.15);
+  --chip-error-bg: rgba(248, 113, 113, 0.15);
+  --chip-info-bg: rgba(129, 140, 248, 0.15);
+
+  /* Compatibility tokens for existing components */
+  --gray-50: rgba(15, 23, 42, 0.9);
+  --gray-100: #020617;
+  --gray-200: #111827;
+  --gray-500: #64748b;
+  --gray-600: #475569;
+  --gray-700: #1f2933;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
   font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   font-size: 16px;
   line-height: 1.5;
-  color: #111;
-  background: #fff;
+  color: var(--text-main);
+  background: radial-gradient(circle at top left, #0b1220, #020617 55%, #000000 100%);
+}
+
+body {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+app-root {
+  flex: 1;
+  display: flex;
+}
+
+app-root > * {
+  flex: 1;
+}
+
+a {
+  color: var(--accent);
+}
+
+button {
+  font-family: inherit;
 }

@@ -1,0 +1,67 @@
+.page {
+  color: var(--text-main);
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+
+  h2 {
+    margin: 0 0 0.35rem;
+    font-size: 1.4rem;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+  }
+}
+
+.search-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+
+  label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-soft);
+  }
+
+  input {
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.5);
+    background: rgba(15, 23, 42, 0.9);
+    color: var(--text-main);
+    font-size: 0.9rem;
+
+    &:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.5);
+    }
+  }
+}
+
+.results {
+  border-radius: 14px;
+  background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.1), transparent 65%),
+              radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.14), transparent 70%),
+              rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  padding: 1rem 1.1rem 1.25rem;
+}
+

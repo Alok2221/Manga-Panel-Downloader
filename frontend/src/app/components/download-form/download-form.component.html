@@ -1,13 +1,13 @@
 <div class="download-form">
   <h2>Download chapter</h2>
-  <p class="hint">Paste a chapter URL from MangaDex, GlobalComix, or MangaPlus</p>
+  <p class="hint">Paste a MangaDex chapter URL (e.g. https://mangadex.org/chapter/...)</p>
   <form (ngSubmit)="onSubmit()">
     <div class="input-row">
       <input
         type="url"
         [(ngModel)]="chapterUrl"
         name="chapterUrl"
-        placeholder="https://mangadex.org/chapter/... or globalcomix.com/... or mangaplus.shueisha.co.jp/..."
+        placeholder="https://mangadex.org/chapter/..."
         [disabled]="loading()"
       />
       <button type="submit" [disabled]="loading()">

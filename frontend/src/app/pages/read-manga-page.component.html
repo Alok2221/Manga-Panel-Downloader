@@ -1,0 +1,41 @@
+<div class="page read-manga-page">
+  <header class="page-header">
+    <div>
+      <h2>Read manga</h2>
+      <p>Browse downloaded chapters for one manga and jump into the reader.</p>
+    </div>
+
+    @if (lastReadChapter(); as last) {
+      <div class="last-read" aria-label="Last read chapter">
+        <div class="label">Last read</div>
+        <button type="button" (click)="onOpenChapter(last)">
+          <span class="title">{{ last.mangaTitle ?? 'Manga' }}</span>
+          <span class="meta">Ch. {{ last.chapterNumber ?? '?' }} – {{ last.title ?? 'chapter' }}</span>
+        </button>
+      </div>
+    }
+  </header>
+
+  <section class="manga-selector">
+    <label for="mangaTitle">Manga title</label>
+    <input
+      id="mangaTitle"
+      type="text"
+      placeholder="Start typing a title (e.g. Bleach)"
+      #mangaInput
+      (input)="onEnterManga(mangaInput.value)"
+    />
+    <p class="hint">
+      This filters the list below to chapters whose title contains the given manga title.
+    </p>
+  </section>
+
+  <section class="chapters-shell">
+    <app-chapter-list
+      [refreshTrigger]="refreshTrigger()"
+      [searchTitle]="highlightedMangaTitle() ?? ''"
+      [searchChapter]="undefined"
+    />
+  </section>
+</div>
+

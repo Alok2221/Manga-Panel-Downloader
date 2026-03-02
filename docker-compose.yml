@@ -26,6 +26,7 @@ services:
       STORAGE_PATH: /data/panels
     volumes:
       - panel_storage:/data/panels
+    user: "0:0"
     ports:
       - "8080:8080"
     depends_on:

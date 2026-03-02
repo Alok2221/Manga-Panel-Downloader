@@ -1,1 +1,39 @@
-<router-outlet />
+<div class="shell">
+  <header class="shell-header">
+    <div class="brand">
+      <div class="brand-logo">
+        <div class="brand-logo-inner"></div>
+      </div>
+      <div class="brand-text">
+        <h1 class="brand-title">Manga Panel Studio</h1>
+        <p class="brand-subtitle">MangaDex · Download · Read</p>
+      </div>
+    </div>
+
+    <nav class="shell-nav" aria-label="Main navigation">
+      <a routerLink="/" class="nav-link active-main">
+        <span>Main Page</span>
+      </a>
+      <a routerLink="/search" class="nav-link active-search">
+        <span>Search</span>
+      </a>
+      <a routerLink="/read" class="nav-link active-read">
+        <span>Read Manga</span>
+      </a>
+    </nav>
+  </header>
+
+  <main class="shell-main">
+    <div class="shell-main-inner">
+      <router-outlet />
+      <section class="credits" aria-label="MangaDex credits">
+        <p>
+          This project uses the public
+          <a href="https://mangadex.org" target="_blank" rel="noopener noreferrer">MangaDex</a>
+          API. All manga data and images are provided by MangaDex and the respective scanlation groups.
+          We honor content removal requests and do not serve ads or paid services.
+        </p>
+      </section>
+    </div>
+  </main>
+</div>

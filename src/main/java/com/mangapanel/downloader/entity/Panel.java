@@ -16,6 +16,9 @@ public class Panel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "chapter_id", insertable = false, updatable = false)
+    private Long chapterId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "chapter_id")
     private Chapter chapter;
@@ -28,6 +31,9 @@ public class Panel {
 
     @Column(name = "local_path", columnDefinition = "TEXT")
     private String localPath;
+
+    @Column(name = "data", columnDefinition = "bytea")
+    private byte[] data;
 
     @Column(name = "width")
     private Integer width;
