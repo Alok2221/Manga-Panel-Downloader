@@ -46,6 +46,9 @@ public class Chapter {
     @Column(name = "source_chapter_id", length = 36)
     private String sourceChapterId;
 
+    @Column(name = "volume", length = 20)
+    private String volume;
+
     @OneToMany(mappedBy = "chapter", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("pageNumber ASC")
     @Builder.Default

@@ -23,4 +23,5 @@ public class ChapterDto {
     private Integer panelsDownloaded;
     private Instant downloadedAt;
     private String language;
+    private String volume;
 }

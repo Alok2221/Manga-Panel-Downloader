@@ -92,6 +92,7 @@ public class ChapterDownloadService {
                 .title(mangaTitle)
                 .createdAt(Instant.now())
                 .build());
+        String volume = data.getAttributes().getVolume();
         Chapter chapter = Chapter.builder()
                 .manga(manga)
                 .chapterNumber(chapterNum)
@@ -101,6 +102,7 @@ public class ChapterDownloadService {
                 .downloadedAt(Instant.now())
                 .language(data.getAttributes().getTranslatedLanguage())
                 .sourceChapterId(chapterId)
+                .volume(volume != null && !volume.isBlank() ? volume : null)
                 .build();
         chapter = chapterRepository.save(chapter);
         log.info("Created MangaDex chapter id={}, panels to download will be resolved via at-home", chapter.getId());

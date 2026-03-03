@@ -1,6 +1,7 @@
 package com.mangapanel.downloader.controller;
 
 import com.mangapanel.downloader.dto.ChapterDto;
+import com.mangapanel.downloader.dto.ChapterGroupedDto;
 import com.mangapanel.downloader.dto.DownloadRequest;
 import com.mangapanel.downloader.dto.ErrorResponse;
 import com.mangapanel.downloader.dto.PanelDto;
@@ -59,6 +60,23 @@ public class ChapterController {
         return chapterService.search(title, chapter, pageable);
     }
 
+    @GetMapping("/chapters/grouped")
+    public List<ChapterGroupedDto> getChaptersGrouped(
+            @RequestParam(required = false) String title,
+            @RequestParam(required = false) BigDecimal chapter,
+            @RequestParam(required = false) String volume) {
+        return chapterService.findGroupedByMangaAndVolume(title, chapter, volume);
+    }
+
+    /**
+     * Chapter sequence for reader navigation when reading "all chapters" of a manga.
+     * Uses exact manga title match (case-insensitive).
+     */
+    @GetMapping("/chapters/sequence")
+    public List<ChapterDto> getChapterSequence(@RequestParam String mangaTitle) {
+        return chapterService.getChapterSequenceForMangaTitle(mangaTitle);
+    }
+
     @GetMapping("/chapters/{id}")
     public ResponseEntity<ChapterDto> getChapter(@PathVariable Long id) {
         return chapterService.findDtoById(id)
@@ -90,6 +108,16 @@ public class ChapterController {
         }
         chapterService.deleteById(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Reindex chapter IDs to 1, 2, 3, ... (by current id order).
+     * Call after deletions so the first remaining chapter has id=1.
+     */
+    @PostMapping("/chapters/reindex")
+    public ResponseEntity<java.util.Map<String, String>> reindexChapters() {
+        chapterService.reindexChapters();
+        return ResponseEntity.ok(java.util.Map.of("status", "ok", "message", "Chapters reindexed"));
     }
 
     @GetMapping("/search")

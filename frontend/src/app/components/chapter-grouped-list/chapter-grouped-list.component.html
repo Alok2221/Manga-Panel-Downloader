@@ -1,0 +1,64 @@
+<div class="chapter-grouped-list">
+  @if (loading()) {
+    <p class="loading">Loading…</p>
+  } @else if (grouped().length === 0) {
+    <p class="empty">No chapters yet. Add chapters from the Main Page.</p>
+  } @else {
+    <div class="manga-accordion">
+      @for (manga of grouped(); track mangaKey(manga)) {
+        @let mk = mangaKey(manga);
+        <section class="manga-section" [class.is-open]="isMangaExpanded(mk)">
+          <button type="button" class="manga-header" (click)="toggleManga(mk)" [attr.aria-expanded]="isMangaExpanded(mk)">
+            <span class="manga-chevron" aria-hidden="true">{{ isMangaExpanded(mk) ? '&#9660;' : '&#9654;' }}</span>
+            <span class="manga-title">{{ manga.mangaTitle }}</span>
+            <span class="manga-count">{{ manga.volumes.length }} volume(s)</span>
+          </button>
+          @if (isMangaExpanded(mk)) {
+            <div class="manga-body">
+              @for (vol of manga.volumes; track vol.volume) {
+                @let vk = volumeKey(mk, vol.volume);
+                <div class="volume-block">
+                  <button type="button" class="volume-header" (click)="toggleVolume(vk)" [attr.aria-expanded]="isVolumeExpanded(vk)">
+                    <span class="volume-chevron" aria-hidden="true">{{ isVolumeExpanded(vk) ? '&#9660;' : '&#9654;' }}</span>
+                    <span class="volume-label">Volume {{ vol.volume === 'none' ? '—' : vol.volume }}</span>
+                    <span class="volume-count">{{ vol.chapters.length }} chapter(s)</span>
+                  </button>
+                  @if (isVolumeExpanded(vk)) {
+                    <div class="volume-body">
+                      <div class="chapter-grid">
+                        @for (ch of vol.chapters; track ch.id) {
+                          <article class="chapter-card">
+                            <div class="card-body">
+                              <h4 class="card-title">Ch. {{ ch.chapterNumber ?? '?' }}{{ ch.title ? ' · ' + ch.title : '' }}</h4>
+                              <p class="card-meta">{{ (ch.panelsDownloaded ?? 0) }} / {{ ch.totalPanels }} panels · {{ ch.downloadedAt | date:'short' }}</p>
+                              @if (isDownloading(ch)) {
+                                <div class="progress-bar">
+                                  <div class="progress-fill" [style.width]="progressPercent(ch) + '%'"></div>
+                                </div>
+                              }
+                            </div>
+                            <div class="card-actions">
+                              <a [routerLink]="['/chapters', ch.id]" class="btn btn-read">Read</a>
+                              <button
+                                type="button"
+                                class="btn btn-zip"
+                                [disabled]="isDownloading(ch) || downloadingZip() === ch.id"
+                                (click)="downloadChapterZip(ch, $event)"
+                              >
+                                {{ downloadingZip() === ch.id ? 'Zipping…' : 'Download ZIP' }}
+                              </button>
+                            </div>
+                          </article>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </section>
+      }
+    </div>
+  }
+</div>

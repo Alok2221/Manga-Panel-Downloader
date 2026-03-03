@@ -1,17 +1,25 @@
 package com.mangapanel.downloader.service;
 
 import com.mangapanel.downloader.dto.ChapterDto;
+import com.mangapanel.downloader.dto.ChapterGroupedDto;
 import com.mangapanel.downloader.entity.Chapter;
 import com.mangapanel.downloader.repository.ChapterRepository;
 import com.mangapanel.downloader.repository.PanelRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +27,9 @@ public class ChapterService {
 
     private final ChapterRepository chapterRepository;
     private final PanelRepository panelRepository;
+    private final JdbcTemplate jdbcTemplate;
+
+    private static final long REINDEX_OFFSET = 100_000L;
 
     public Optional<Chapter> findById(Long id) {
         return chapterRepository.findById(id);
@@ -37,12 +48,138 @@ public class ChapterService {
         return chapterRepository.search(titleParam, chapterNum, pageable).map(this::toDto);
     }
 
+    /**
+     * Returns chapters grouped by manga and then by volume, for the Read page.
+     * Filters by manga title (substring), chapter number (exact), volume (substring).
+     */
+    public List<ChapterGroupedDto> findGroupedByMangaAndVolume(String title, BigDecimal chapterNum, String volume) {
+        String titleParam = (title != null && !title.isBlank()) ? title.trim() : null;
+        String volumeParam = (volume != null && !volume.isBlank()) ? volume.trim() : null;
+        List<Chapter> chapters = chapterRepository.findForGrouped(titleParam, chapterNum, volumeParam);
+        Map<String, Map<String, List<ChapterDto>>> byMangaThenVolume = new LinkedHashMap<>();
+        for (Chapter c : chapters) {
+            String mangaKey = c.getManga() != null ? c.getManga().getTitle() : "Unknown";
+            if (mangaKey == null) mangaKey = "Unknown";
+            String volKey = c.getVolume() != null && !c.getVolume().isBlank() ? c.getVolume() : "none";
+            byMangaThenVolume
+                    .computeIfAbsent(mangaKey, k -> new LinkedHashMap<>())
+                    .computeIfAbsent(volKey, k -> new ArrayList<>())
+                    .add(toDto(c));
+        }
+        List<ChapterGroupedDto> result = new ArrayList<>();
+        for (Map.Entry<String, Map<String, List<ChapterDto>>> mangaEntry : byMangaThenVolume.entrySet()) {
+            List<ChapterGroupedDto.VolumeGroupDto> volumes = new ArrayList<>();
+            List<String> volumeKeys = new ArrayList<>(mangaEntry.getValue().keySet());
+
+            volumeKeys.sort((a, b) -> compareVolumeKeys(a, b));
+            for (String volKey : volumeKeys) {
+                List<ChapterDto> chapterDtos = mangaEntry.getValue().get(volKey);
+                if (chapterDtos != null) {
+                    chapterDtos.sort((c1, c2) -> compareChapterNumbers(c1.getChapterNumber(), c2.getChapterNumber(), c1.getId(), c2.getId()));
+                }
+                volumes.add(ChapterGroupedDto.VolumeGroupDto.builder()
+                        .volume(volKey)
+                        .chapters(chapterDtos)
+                        .build());
+            }
+            Long mangaId = mangaEntry.getValue().values().stream()
+                    .flatMap(List::stream)
+                    .findFirst()
+                    .map(ChapterDto::getMangaId)
+                    .orElse(null);
+            result.add(ChapterGroupedDto.builder()
+                    .mangaId(mangaId)
+                    .mangaTitle(mangaEntry.getKey())
+                    .volumes(volumes)
+                    .build());
+        }
+        return result;
+    }
+
+    private static final Pattern NUMERIC = Pattern.compile("^\\d+(?:\\.\\d+)?$");
+
+    private static int compareVolumeKeys(String a, String b) {
+        String va = (a == null || a.isBlank()) ? "none" : a;
+        String vb = (b == null || b.isBlank()) ? "none" : b;
+        if ("none".equalsIgnoreCase(va) && "none".equalsIgnoreCase(vb)) return 0;
+        if ("none".equalsIgnoreCase(va)) return 1; // none last
+        if ("none".equalsIgnoreCase(vb)) return -1;
+
+        BigDecimal na = parseNumericOrNull(va);
+        BigDecimal nb = parseNumericOrNull(vb);
+        if (na != null && nb != null) return na.compareTo(nb);
+        if (na != null) return -1;
+        if (nb != null) return 1;
+        return va.compareToIgnoreCase(vb);
+    }
+
+    private static int compareChapterNumbers(BigDecimal a, BigDecimal b, Long idA, Long idB) {
+        if (a == null && b == null) return Long.compare(idA != null ? idA : 0L, idB != null ? idB : 0L);
+        if (a == null) return 1;
+        if (b == null) return -1;
+        int cmp = a.compareTo(b);
+        if (cmp != 0) return cmp;
+        return Long.compare(idA != null ? idA : 0L, idB != null ? idB : 0L);
+    }
+
+    private static BigDecimal parseNumericOrNull(String s) {
+        if (s == null) return null;
+        String t = s.trim();
+        if (!NUMERIC.matcher(t).matches()) return null;
+        try {
+            return new BigDecimal(t);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     @Transactional
     public void deleteById(Long id) {
         chapterRepository.findById(id).ifPresent(ch -> {
             ch.getPanels().clear();
             chapterRepository.delete(ch);
         });
+    }
+
+    /**
+     * Reindex chapter IDs to be sequential 1, 2, 3, ... (by current id order).
+     * Use after deletions so that the first remaining chapter has id=1, etc.
+     */
+    @Transactional
+    public void reindexChapters() {
+        List<Chapter> ordered = chapterRepository.findAllByOrderByIdAsc();
+        if (ordered.isEmpty()) {
+            resetChapterSequence(0L);
+            return;
+        }
+        List<Long> oldIds = ordered.stream().map(Chapter::getId).toList();
+        for (int i = 0; i < oldIds.size(); i++) {
+            long oldId = oldIds.get(i);
+            long newId = i + 1L;
+            if (oldId == newId) continue;
+            long tempId = oldId + REINDEX_OFFSET;
+            jdbcTemplate.update("UPDATE panel SET chapter_id = ? WHERE chapter_id = ?", tempId, oldId);
+            jdbcTemplate.update("UPDATE chapter SET id = ? WHERE id = ?", tempId, oldId);
+        }
+        for (int i = 0; i < oldIds.size(); i++) {
+            long oldId = oldIds.get(i);
+            long newId = i + 1L;
+            if (oldId == newId) continue;
+            long tempId = oldId + REINDEX_OFFSET;
+            jdbcTemplate.update("UPDATE panel SET chapter_id = ? WHERE chapter_id = ?", newId, tempId);
+            jdbcTemplate.update("UPDATE chapter SET id = ? WHERE id = ?", newId, tempId);
+        }
+        resetChapterSequence((long) ordered.size());
+    }
+
+    private void resetChapterSequence(Long maxId) {
+        try {
+            jdbcTemplate.execute("SELECT setval(pg_get_serial_sequence('chapter', 'id'), " + Math.max(1, maxId) + ")");
+        } catch (Exception e) {
+            try {
+                jdbcTemplate.execute("SELECT setval('chapter_id_seq', " + Math.max(1, maxId) + ")");
+            } catch (Exception ignored) {}
+        }
     }
 
     public ChapterDto toDto(Chapter c) {
@@ -58,6 +195,24 @@ public class ChapterService {
                 .panelsDownloaded((int) count)
                 .downloadedAt(c.getDownloadedAt())
                 .language(c.getLanguage())
+                .volume(c.getVolume())
                 .build();
+    }
+
+    /**
+     * Chapter navigation list for a manga title (exact match, case-insensitive).
+     * Sorted by volume (numeric), chapter number (numeric), then id.
+     */
+    public List<ChapterDto> getChapterSequenceForMangaTitle(String mangaTitle) {
+        if (mangaTitle == null || mangaTitle.isBlank()) return List.of();
+        List<Chapter> chapters = chapterRepository.findByMangaTitleExact(mangaTitle.trim());
+        List<ChapterDto> dtos = chapters.stream().map(this::toDto).toList();
+        List<ChapterDto> sorted = new ArrayList<>(dtos);
+        sorted.sort((a, b) -> {
+            int vCmp = compareVolumeKeys(a.getVolume(), b.getVolume());
+            if (vCmp != 0) return vCmp;
+            return compareChapterNumbers(a.getChapterNumber(), b.getChapterNumber(), a.getId(), b.getId());
+        });
+        return sorted;
     }
 }

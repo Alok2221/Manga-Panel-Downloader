@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Chapter, ChapterPage } from '../models/chapter.model';
+import { Chapter, ChapterGrouped, ChapterPage } from '../models/chapter.model';
 import { Panel } from '../models/panel.model';
 
 export interface DownloadResponse {
@@ -42,10 +42,30 @@ export class ApiService {
     return this.http.delete<void>(`${this.baseUrl}/chapters/${id}`);
   }
 
+  /** Reindex chapter IDs to 1, 2, 3, … (call after deletions). */
+  reindexChapters(): Observable<{ status: string; message: string }> {
+    return this.http.post<{ status: string; message: string }>(`${this.baseUrl}/chapters/reindex`, {});
+  }
+
   search(title?: string, chapter?: number, page = 0, size = 20): Observable<ChapterPage> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (title) params = params.set('title', title);
     if (chapter != null) params = params.set('chapter', chapter);
     return this.http.get<ChapterPage>(`${this.baseUrl}/search`, { params });
+  }
+
+  /** Chapters grouped by manga and volume (for Read page). */
+  getChaptersGrouped(title?: string | null, chapter?: number | null, volume?: string | null): Observable<ChapterGrouped[]> {
+    let params = new HttpParams();
+    if (title != null && title !== '') params = params.set('title', title);
+    if (chapter != null) params = params.set('chapter', String(chapter));
+    if (volume != null && volume !== '') params = params.set('volume', volume);
+    return this.http.get<ChapterGrouped[]>(`${this.baseUrl}/chapters/grouped`, { params });
+  }
+
+  /** Chapter sequence for navigating between chapters when reading whole manga. */
+  getChapterSequence(mangaTitle: string): Observable<Chapter[]> {
+    const params = new HttpParams().set('mangaTitle', mangaTitle);
+    return this.http.get<Chapter[]>(`${this.baseUrl}/chapters/sequence`, { params });
   }
 }

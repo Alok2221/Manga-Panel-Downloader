@@ -1,35 +1,48 @@
 <div class="panel-gallery">
   @if (loading()) {
     <p class="loading">Loading panels...</p>
-  } @else {
-    <div class="header">
-      <a routerLink="/" class="back">← Chapter list</a>
-      @if (chapter(); as ch) {
-        <h1>{{ ch.mangaTitle ?? 'Manga' }} – Ch. {{ ch.chapterNumber ?? '?' }}</h1>
+  } @else if (chapter(); as ch) {
+    <nav class="reader-toolbar">
+      <a routerLink="/read" class="back">← Read Manga</a>
+      <div class="toolbar-center">
+        <span class="chapter-title">{{ ch.mangaTitle ?? 'Manga' }} – Ch. {{ ch.chapterNumber ?? '?' }}</span>
         @if (ch.title) {
-          <p class="subtitle">{{ ch.title }}</p>
+          <span class="chapter-subtitle">{{ ch.title }}</span>
         }
-      }
-    </div>
-    <div class="grid">
-      @for (panel of panels(); track panel.id) {
-        <div class="panel-card">
+      </div>
+      <div class="toolbar-nav">
+        <button type="button" class="btn-chapter" [disabled]="prevChapterId() === null" (click)="openPrevChapter()">
+          ⇠ Chapter
+        </button>
+        <button type="button" class="btn-nav" [disabled]="currentIndex() <= 0" (click)="prev()">← Prev</button>
+        <span class="page-indicator">{{ currentIndex() + 1 }} / {{ panels().length }}</span>
+        <button type="button" class="btn-nav" [disabled]="currentIndex() >= panels().length - 1" (click)="next()">Next →</button>
+        <button type="button" class="btn-chapter" [disabled]="nextChapterId() === null" (click)="openNextChapter()">
+          Chapter ⇢
+        </button>
+        <button type="button" class="btn-fullscreen" (click)="toggleFullscreen()" title="Fullscreen">⛶</button>
+      </div>
+    </nav>
+
+    <div class="reader-fullscreen-target" [class.is-fullscreen]="isFullscreen()" #fullscreenTarget>
+      <div class="reader-view">
+        @if (panels().length > 0 && currentPanel(); as panel) {
           <img
             [src]="panelImageUrl(panel.id)"
             [alt]="'Page ' + panel.pageNumber"
-            loading="lazy"
+            class="reader-image"
+            (click)="next()"
           />
-          <div class="actions">
-            <span class="page-num">Page {{ panel.pageNumber }}</span>
-            <button type="button" class="btn-download" (click)="downloadPanel(panel, $event)">
-              Download
-            </button>
-          </div>
-        </div>
-      }
+        } @else if (panels().length === 0) {
+          <p class="empty">No panels yet. The chapter may still be downloading.</p>
+        }
+      </div>
+      <button
+        type="button"
+        class="fullscreen-btn fullscreen-close"
+        aria-label="Close fullscreen"
+        (click)="exitFullscreen()"
+      >×</button>
     </div>
-    @if (panels().length === 0 && !loading()) {
-      <p class="empty">No panels yet. The chapter may still be downloading.</p>
-    }
   }
 </div>

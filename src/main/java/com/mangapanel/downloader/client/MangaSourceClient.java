@@ -11,6 +11,9 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
+import com.mangapanel.downloader.client.dto.MangadexChapterFeedResponse;
+import com.mangapanel.downloader.client.dto.MangadexMangaListResponse;
+
 import java.time.Duration;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -50,6 +53,7 @@ public class MangaSourceClient {
     }
 
     private static final String MANGA_API = "https://api.mangadex.org/manga";
+    private static final String MANGA_FEED_SUFFIX = "/feed";
 
     public Mono<MangaSourceApiResponse> fetchChapter(String chapterId) {
         WebClient client = webClientBuilder.build();
@@ -138,37 +142,44 @@ public class MangaSourceClient {
         return HTTP_TIMEOUT_SECONDS;
     }
 
-    @SuppressWarnings("unchecked")
-    public Map<String, Object> searchManga(String title, int limit) {
+    /**
+     * Search manga by title via MangaDex GET /manga.
+     * @param title search query (title)
+     * @param limit max results (default 20)
+     * @param offset pagination offset
+     */
+    public Mono<MangadexMangaListResponse> searchManga(String title, int limit, int offset) {
         WebClient client = webClientBuilder.build();
-        String encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8);
-        String url = MANGA_API + "?title=" + encodedTitle + "&limit=" + limit;
+        String encodedTitle = URLEncoder.encode(title != null ? title : "", StandardCharsets.UTF_8);
+        String uri = MANGA_API + "?title=" + encodedTitle + "&limit=" + limit + "&offset=" + offset + "&contentRating[]=safe&contentRating[]=suggestive";
         return client.get()
-                .uri(url)
+                .uri(uri)
                 .retrieve()
-                .bodyToMono(Map.class)
-                .timeout(Duration.ofSeconds(HTTP_TIMEOUT_SECONDS))
-                .block();
+                .bodyToMono(MangadexMangaListResponse.class)
+                .timeout(Duration.ofSeconds(HTTP_TIMEOUT_SECONDS));
     }
 
-    @SuppressWarnings("unchecked")
-    public Map<String, Object> listChaptersForManga(String mangaId, int limit, int offset, String translatedLanguage) {
+    /**
+     * Get chapter feed for a manga via MangaDex GET /manga/{id}/feed.
+     * @param mangaId MangaDex manga UUID
+     * @param limit max chapters (default 96)
+     * @param offset pagination offset
+     * @param translatedLanguage optional language filter (e.g. "en")
+     */
+    public Mono<MangadexChapterFeedResponse> getMangaFeed(String mangaId, int limit, int offset, String translatedLanguage) {
         WebClient client = webClientBuilder.build();
-        StringBuilder sb = new StringBuilder(CHAPTER_API)
-                .append("?manga=").append(mangaId)
-                .append("&limit=").append(limit)
-                .append("&offset=").append(offset);
+        StringBuilder sb = new StringBuilder(MANGA_API).append("/").append(mangaId).append(MANGA_FEED_SUFFIX)
+                .append("?limit=").append(limit)
+                .append("&offset=").append(offset)
+                .append("&order[chapter]=asc");
         if (translatedLanguage != null && !translatedLanguage.isBlank()) {
-            sb.append("&translatedLanguage[]=")
-                    .append(URLEncoder.encode(translatedLanguage, StandardCharsets.UTF_8));
+            sb.append("&translatedLanguage[]=").append(URLEncoder.encode(translatedLanguage, StandardCharsets.UTF_8));
         }
-        String url = sb.toString();
         return client.get()
-                .uri(url)
+                .uri(sb.toString())
                 .retrieve()
-                .bodyToMono(Map.class)
-                .timeout(Duration.ofSeconds(HTTP_TIMEOUT_SECONDS))
-                .block();
+                .bodyToMono(MangadexChapterFeedResponse.class)
+                .timeout(Duration.ofSeconds(HTTP_TIMEOUT_SECONDS));
     }
 
     public static class MangaSourceException extends RuntimeException {

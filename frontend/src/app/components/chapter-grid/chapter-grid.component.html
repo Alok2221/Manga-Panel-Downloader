@@ -1,0 +1,43 @@
+<div class="chapter-grid">
+  <h2>Downloaded chapters</h2>
+  @if (loading()) {
+    <p class="loading">Loading...</p>
+  } @else if (chapters().length === 0) {
+    <p class="empty">No chapters yet. Add chapters from the Main Page.</p>
+  } @else {
+    <div class="grid">
+      @for (ch of chapters(); track ch.id) {
+        <article class="card">
+          <div class="card-body">
+            <h3 class="card-title">{{ ch.mangaTitle ?? 'Manga' }}</h3>
+            <p class="card-meta">Ch. {{ ch.chapterNumber ?? '?' }}{{ ch.title ? ' · ' + ch.title : '' }}</p>
+            <p class="card-info">{{ (ch.panelsDownloaded ?? 0) }} / {{ ch.totalPanels }} panels · {{ ch.downloadedAt | date:'short' }}</p>
+            @if (isDownloading(ch)) {
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width]="progressPercent(ch) + '%'"></div>
+              </div>
+            }
+          </div>
+          <div class="card-actions">
+            <a [routerLink]="['/chapters', ch.id]" class="btn btn-read">Read</a>
+            <button
+              type="button"
+              class="btn btn-zip"
+              [disabled]="isDownloading(ch) || downloadingZip() === ch.id"
+              (click)="downloadChapterZip(ch, $event)"
+            >
+              {{ downloadingZip() === ch.id ? 'Zipping…' : 'Download ZIP' }}
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+    @if (totalPages() > 1) {
+      <div class="pagination">
+        <button [disabled]="currentPage() === 0" (click)="load(currentPage() - 1)">←</button>
+        <span>Page {{ currentPage() + 1 }} / {{ totalPages() }}</span>
+        <button [disabled]="currentPage() >= totalPages() - 1" (click)="load(currentPage() + 1)">→</button>
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,94 @@
+<div class="manga-cards-grid">
+  @if (loading()) {
+    <p class="loading">Loading…</p>
+  } @else if (grouped().length === 0) {
+    <p class="empty">No chapters yet. Add chapters from the Main Page.</p>
+  } @else {
+    <div class="grid">
+      @for (manga of grouped(); track mangaKey(manga); let i = $index) {
+        @let mk = mangaKey(manga);
+        @let totalCh = totalChapters(manga);
+        <article class="manga-card">
+          <div class="manga-cover" [style]="coverStyle(i)"></div>
+          <div class="manga-content">
+            <div class="manga-header">
+              <h3 class="manga-title">{{ manga.mangaTitle }}</h3>
+              <div class="manga-stats">
+                <span class="stat-badge" title="Volumes">{{ manga.volumes.length }}</span>
+                <span class="stat-badge" title="Chapters">{{ totalCh }}</span>
+              </div>
+            </div>
+            <div class="manga-actions">
+              <button type="button" class="btn btn-primary" [disabled]="firstChapterId(manga) === null" (click)="readAll(manga)">
+                Read all
+              </button>
+              <button
+                type="button"
+                class="btn btn-secondary"
+                [disabled]="downloadingManga() === mk || totalCh === 0"
+                (click)="downloadMangaAll(manga, $event)"
+              >
+                {{ downloadingManga() === mk ? 'Preparing…' : 'Download all' }}
+              </button>
+            </div>
+            <div class="volumes-dropdown">
+              @for (vol of manga.volumes; track vol.volume) {
+                @let vk = volumeKey(mk, vol.volume);
+                <div class="volume-item">
+                  <div class="volume-header" (click)="toggleVolume(vk)">
+                    <div class="volume-title">
+                      <span class="expand-icon" [class.rotated]="isVolumeExpanded(vk)">▼</span>
+                      Volume {{ vol.volume === 'none' ? '—' : vol.volume }}
+                      <span class="volume-badge">{{ vol.chapters.length }} ch.</span>
+                    </div>
+                    <div class="volume-actions" (click)="$event.stopPropagation()">
+                      <button
+                        type="button"
+                        class="volume-btn"
+                        [disabled]="firstChapterIdInVolume(vol) === null"
+                        (click)="readVolume(vol)"
+                      >
+                        Read
+                      </button>
+                      <button
+                        type="button"
+                        class="volume-btn"
+                        [disabled]="vol.chapters.length === 0 || downloadingVolume() === vk"
+                        (click)="downloadVolumeZip(vol, manga.mangaTitle, vk, $event)"
+                      >
+                        {{ downloadingVolume() === vk ? '…' : 'Download' }}
+                      </button>
+                    </div>
+                  </div>
+                  @if (isVolumeExpanded(vk)) {
+                    <div class="chapters-list">
+                      @for (ch of vol.chapters; track ch.id) {
+                        <div class="chapter-item">
+                          <div class="chapter-info">
+                            <span class="chapter-number">Ch. {{ ch.chapterNumber ?? '?' }}</span>
+                            <span class="chapter-title">{{ ch.title ?? 'Chapter' }}</span>
+                          </div>
+                          <div class="chapter-actions">
+                            <button type="button" class="chapter-btn" (click)="readChapter(ch)">Read</button>
+                            <button
+                              type="button"
+                              class="chapter-btn"
+                              [disabled]="downloadingZip() === ch.id"
+                              (click)="downloadChapterZip(ch, $event)"
+                            >
+                              {{ downloadingZip() === ch.id ? '…' : 'Download' }}
+                            </button>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </article>
+      }
+    </div>
+  }
+</div>

@@ -11,13 +11,13 @@
     </div>
 
     <nav class="shell-nav" aria-label="Main navigation">
-      <a routerLink="/" class="nav-link active-main">
+      <a routerLink="/" routerLinkActive="active-main" [routerLinkActiveOptions]="{ exact: true }" class="nav-link">
         <span>Main Page</span>
       </a>
-      <a routerLink="/search" class="nav-link active-search">
+      <a routerLink="/search" routerLinkActive="active-search" class="nav-link">
         <span>Search</span>
       </a>
-      <a routerLink="/read" class="nav-link active-read">
+      <a routerLink="/read" routerLinkActive="active-read" class="nav-link">
         <span>Read Manga</span>
       </a>
     </nav>

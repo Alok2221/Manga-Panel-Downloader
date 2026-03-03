@@ -1,14 +1,13 @@
 <div class="page read-manga-page">
   <header class="page-header">
     <div>
-      <h2>Read manga</h2>
-      <p>Browse downloaded chapters for one manga and jump into the reader.</p>
+      <h1 class="page-title">Manga Library</h1>
+      <p class="page-subtitle">Browse and manage your downloaded manga</p>
     </div>
-
     @if (lastReadChapter(); as last) {
       <div class="last-read" aria-label="Last read chapter">
         <div class="label">Last read</div>
-        <button type="button" (click)="onOpenChapter(last)">
+        <button type="button" class="last-read-btn" (click)="onOpenChapter(last)">
           <span class="title">{{ last.mangaTitle ?? 'Manga' }}</span>
           <span class="meta">Ch. {{ last.chapterNumber ?? '?' }} – {{ last.title ?? 'chapter' }}</span>
         </button>
@@ -16,26 +15,86 @@
     }
   </header>
 
-  <section class="manga-selector">
-    <label for="mangaTitle">Manga title</label>
-    <input
-      id="mangaTitle"
-      type="text"
-      placeholder="Start typing a title (e.g. Bleach)"
-      #mangaInput
-      (input)="onEnterManga(mangaInput.value)"
-    />
-    <p class="hint">
-      This filters the list below to chapters whose title contains the given manga title.
-    </p>
+  <section class="search-section">
+    <div class="search-container">
+      <div class="search-input-wrapper">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Search by manga name, chapter or volume..."
+          #searchInput
+          [value]="searchTitle() ?? ''"
+          (input)="onTitleChange(searchInput.value)"
+        />
+      </div>
+      <button
+        type="button"
+        class="filter-button"
+        [class.active]="filtersOpen()"
+        (click)="toggleFilters()"
+        aria-expanded="filtersOpen()"
+      >
+        <span class="filter-icon">▾</span>
+        Filters
+      </button>
+    </div>
+    <div class="filters-panel" [class.show]="filtersOpen()">
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label class="filter-label" for="filterMangaTitle">Manga title</label>
+          <input
+            id="filterMangaTitle"
+            type="text"
+            class="filter-input"
+            placeholder="e.g. Bleach"
+            #mangaInput
+            [value]="searchTitle() ?? ''"
+            (input)="onTitleChange(mangaInput.value)"
+          />
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="filterChapter">Chapter number</label>
+          <input
+            id="filterChapter"
+            type="text"
+            class="filter-input"
+            placeholder="e.g. 1 or 1.5"
+            #chapterInput
+            [value]="searchChapter() !== null ? searchChapter() : ''"
+            (input)="onChapterChange(chapterInput.value)"
+          />
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="filterVolume">Volume</label>
+          <input
+            id="filterVolume"
+            type="text"
+            class="filter-input"
+            placeholder="e.g. 1"
+            #volumeInput
+            [value]="searchVolume() ?? ''"
+            (input)="onVolumeChange(volumeInput.value)"
+          />
+        </div>
+      </div>
+      <button type="button" class="apply-filters-btn" (click)="toggleFilters()">Apply filters</button>
+    </div>
   </section>
 
+  <div class="stats-bar">
+    <span class="results-count">Showing <strong>{{ grouped().length }}</strong> manga{{ grouped().length === 1 ? '' : 's' }}</span>
+    <div class="stats-actions">
+      <button type="button" class="btn-reindex" [disabled]="reindexing()" (click)="onReindex()">
+        {{ reindexing() ? 'Reindexing…' : 'Reindex chapters' }}
+      </button>
+    </div>
+  </div>
+
   <section class="chapters-shell">
-    <app-chapter-list
-      [refreshTrigger]="refreshTrigger()"
-      [searchTitle]="highlightedMangaTitle() ?? ''"
-      [searchChapter]="undefined"
+    <app-manga-cards-grid
+      [grouped]="grouped()"
+      [loading]="loading()"
     />
   </section>
 </div>
-

@@ -9,6 +9,18 @@ export interface Chapter {
   panelsDownloaded?: number;
   downloadedAt: string;
   language: string | null;
+  volume?: string | null;
+}
+
+export interface VolumeGroup {
+  volume: string;
+  chapters: Chapter[];
+}
+
+export interface ChapterGrouped {
+  mangaId: number | null;
+  mangaTitle: string;
+  volumes: VolumeGroup[];
 }
 
 export interface ChapterPage {
