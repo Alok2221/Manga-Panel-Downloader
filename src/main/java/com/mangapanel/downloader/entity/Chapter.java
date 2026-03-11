@@ -28,7 +28,7 @@ public class Chapter {
     @Column(name = "chapter_number", precision = 5, scale = 2)
     private BigDecimal chapterNumber;
 
-    @Column(length = 255)
+    @Column()
     private String title;
 
     @Column(columnDefinition = "TEXT", unique = true)
@@ -48,6 +48,9 @@ public class Chapter {
 
     @Column(name = "volume", length = 20)
     private String volume;
+
+    @Column(name = "scanlation_group")
+    private String scanlationGroup;
 
     @OneToMany(mappedBy = "chapter", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("pageNumber ASC")

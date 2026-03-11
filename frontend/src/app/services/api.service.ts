@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Chapter, ChapterGrouped, ChapterPage } from '../models/chapter.model';
 import { Panel } from '../models/panel.model';
+import { PanelTextSegment } from '../models/panel-text-segment.model';
 
 export interface DownloadResponse {
   id?: number;
@@ -47,10 +48,11 @@ export class ApiService {
     return this.http.post<{ status: string; message: string }>(`${this.baseUrl}/chapters/reindex`, {});
   }
 
-  search(title?: string, chapter?: number, page = 0, size = 20): Observable<ChapterPage> {
+  search(title?: string, chapter?: number, volume?: string, page = 0, size = 20): Observable<ChapterPage> {
     let params = new HttpParams().set('page', page).set('size', size);
     if (title) params = params.set('title', title);
     if (chapter != null) params = params.set('chapter', chapter);
+    if (volume != null && volume !== '') params = params.set('volume', volume);
     return this.http.get<ChapterPage>(`${this.baseUrl}/search`, { params });
   }
 
@@ -67,5 +69,24 @@ export class ApiService {
   getChapterSequence(mangaTitle: string): Observable<Chapter[]> {
     const params = new HttpParams().set('mangaTitle', mangaTitle);
     return this.http.get<Chapter[]>(`${this.baseUrl}/chapters/sequence`, { params });
+  }
+
+  /** Get text segments (OCR/translation) for a chapter. */
+  getChapterTexts(chapterId: number): Observable<PanelTextSegment[]> {
+    return this.http.get<PanelTextSegment[]>(`${this.baseUrl}/chapters/${chapterId}/texts`);
+  }
+
+  /** Trigger OCR to extract text from chapter panels. */
+  startChapterOcr(chapterId: number, sourceLanguage?: string): Observable<{ status: string }> {
+    let params = new HttpParams();
+    if (sourceLanguage) params = params.set('sourceLanguage', sourceLanguage);
+    return this.http.post<{ status: string }>(`${this.baseUrl}/chapters/${chapterId}/ocr`, {}, { params });
+  }
+
+  /** Trigger translation of chapter text segments (EN→PL). */
+  startChapterTranslation(chapterId: number, targetLanguage?: string): Observable<{ status: string }> {
+    let params = new HttpParams();
+    if (targetLanguage) params = params.set('targetLanguage', targetLanguage);
+    return this.http.post<{ status: string }>(`${this.baseUrl}/chapters/${chapterId}/translate`, {}, { params });
   }
 }

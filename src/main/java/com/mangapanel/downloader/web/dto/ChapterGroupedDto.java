@@ -1,4 +1,4 @@
-package com.mangapanel.downloader.dto;
+package com.mangapanel.downloader.web.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
-/** Response for GET /api/chapters/grouped: manga → volumes → chapters. */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,6 +15,7 @@ public class ChapterGroupedDto {
 
     private Long mangaId;
     private String mangaTitle;
+    private String mangaCoverUrl;
     private List<VolumeGroupDto> volumes;
 
     @Data
@@ -23,7 +23,6 @@ public class ChapterGroupedDto {
     @AllArgsConstructor
     @Builder
     public static class VolumeGroupDto {
-        /** Volume identifier (e.g. "1", "2", "none"). */
         private String volume;
         private List<ChapterDto> chapters;
     }

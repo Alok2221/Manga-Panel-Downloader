@@ -1,4 +1,4 @@
-package com.mangapanel.downloader.dto;
+package com.mangapanel.downloader.web.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -24,4 +24,5 @@ public class ChapterDto {
     private Instant downloadedAt;
     private String language;
     private String volume;
+    private String scanlationGroup;
 }

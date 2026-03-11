@@ -24,9 +24,11 @@ public interface ChapterRepository extends JpaRepository<Chapter, Long> {
     Page<Chapter> searchByMangaTitle(@Param("title") String title, Pageable pageable);
 
     @Query("SELECT c FROM Chapter c JOIN c.manga m WHERE (:title IS NULL OR :title = '' OR LOWER(m.title) LIKE LOWER(CONCAT('%', :title, '%'))) " +
-            "AND (:chapterNum IS NULL OR c.chapterNumber = :chapterNum)")
+            "AND (:chapterNum IS NULL OR c.chapterNumber = :chapterNum) " +
+            "AND (:volume IS NULL OR :volume = '' OR LOWER(COALESCE(c.volume, '')) LIKE LOWER(CONCAT('%', :volume, '%')))")
     Page<Chapter> search(@Param("title") String title,
                          @Param("chapterNum") java.math.BigDecimal chapterNum,
+                         @Param("volume") String volume,
                          Pageable pageable);
 
     @Query("SELECT c FROM Chapter c JOIN FETCH c.manga m " +
@@ -43,3 +45,4 @@ public interface ChapterRepository extends JpaRepository<Chapter, Long> {
             "ORDER BY c.volume NULLS LAST, c.chapterNumber NULLS LAST, c.id")
     List<Chapter> findByMangaTitleExact(@Param("title") String title);
 }
+

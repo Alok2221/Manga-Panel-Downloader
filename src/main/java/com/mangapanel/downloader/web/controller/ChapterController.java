@@ -1,18 +1,13 @@
-package com.mangapanel.downloader.controller;
+package com.mangapanel.downloader.web.controller;
 
-import com.mangapanel.downloader.dto.ChapterDto;
-import com.mangapanel.downloader.dto.ChapterGroupedDto;
-import com.mangapanel.downloader.dto.DownloadRequest;
-import com.mangapanel.downloader.dto.ErrorResponse;
-import com.mangapanel.downloader.dto.PanelDto;
 import com.mangapanel.downloader.service.ChapterDownloadService;
 import com.mangapanel.downloader.service.ChapterService;
 import com.mangapanel.downloader.service.PanelService;
+import com.mangapanel.downloader.web.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -24,7 +19,6 @@ import java.util.List;
 @RestController
 @RequestMapping("/api")
 @RequiredArgsConstructor
-@CrossOrigin(origins = {"http://localhost:4200", "http://frontend:4200"}, allowCredentials = "true")
 public class ChapterController {
 
     private final ChapterDownloadService downloadService;
@@ -56,8 +50,8 @@ public class ChapterController {
     public Page<ChapterDto> listChapters(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) BigDecimal chapter,
-            @PageableDefault(size = 20) Pageable pageable) {
-        return chapterService.search(title, chapter, pageable);
+            Pageable pageable) {
+        return chapterService.search(title, chapter, null, pageable);
     }
 
     @GetMapping("/chapters/grouped")
@@ -68,10 +62,6 @@ public class ChapterController {
         return chapterService.findGroupedByMangaAndVolume(title, chapter, volume);
     }
 
-    /**
-     * Chapter sequence for reader navigation when reading "all chapters" of a manga.
-     * Uses exact manga title match (case-insensitive).
-     */
     @GetMapping("/chapters/sequence")
     public List<ChapterDto> getChapterSequence(@RequestParam String mangaTitle) {
         return chapterService.getChapterSequenceForMangaTitle(mangaTitle);
@@ -110,10 +100,6 @@ public class ChapterController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Reindex chapter IDs to 1, 2, 3, ... (by current id order).
-     * Call after deletions so the first remaining chapter has id=1.
-     */
     @PostMapping("/chapters/reindex")
     public ResponseEntity<java.util.Map<String, String>> reindexChapters() {
         chapterService.reindexChapters();
@@ -124,7 +110,8 @@ public class ChapterController {
     public Page<ChapterDto> search(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) BigDecimal chapter,
-            @PageableDefault(size = 20) Pageable pageable) {
-        return chapterService.search(title, chapter, pageable);
+            @RequestParam(required = false) String volume,
+            Pageable pageable) {
+        return chapterService.search(title, chapter, volume, pageable);
     }
 }
