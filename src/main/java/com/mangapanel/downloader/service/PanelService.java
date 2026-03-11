@@ -1,8 +1,8 @@
 package com.mangapanel.downloader.service;
 
-import com.mangapanel.downloader.dto.PanelDto;
 import com.mangapanel.downloader.entity.Panel;
 import com.mangapanel.downloader.repository.PanelRepository;
+import com.mangapanel.downloader.web.dto.PanelDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

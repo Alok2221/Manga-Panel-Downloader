@@ -1,4 +1,5 @@
 import { Component, input, signal } from '@angular/core';
+import { NgStyle } from '@angular/common';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import JSZip from 'jszip';
@@ -8,6 +9,7 @@ import { Chapter, ChapterGrouped, VolumeGroup } from '../../models/chapter.model
 @Component({
   selector: 'app-manga-cards-grid',
   standalone: true,
+  imports: [NgStyle],
   templateUrl: './manga-cards-grid.component.html',
   styleUrl: './manga-cards-grid.component.scss'
 })
@@ -20,22 +22,35 @@ export class MangaCardsGridComponent {
   downloadingVolume = signal<string | null>(null);
   expandedVolume = signal<Set<string>>(new Set());
 
-  private readonly coverGradients = [
-    'linear-gradient(135deg, rgba(34, 197, 94, 0.4) 0%, rgba(139, 92, 246, 0.4) 100%)',
-    'linear-gradient(135deg, rgba(248, 113, 163, 0.35) 0%, rgba(244, 63, 94, 0.35) 100%)',
-    'linear-gradient(135deg, rgba(56, 189, 248, 0.4) 0%, rgba(34, 211, 238, 0.4) 100%)',
-    'linear-gradient(135deg, rgba(34, 197, 94, 0.35) 0%, rgba(52, 211, 153, 0.35) 100%)',
-    'linear-gradient(135deg, rgba(250, 204, 21, 0.3) 0%, rgba(251, 146, 60, 0.3) 100%)'
-  ];
-
   constructor(
     private api: ApiService,
     private router: Router
   ) {}
 
-  coverStyle(index: number): { background: string } {
-    const i = index % this.coverGradients.length;
-    return { background: this.coverGradients[i] };
+  coverStyle(manga: ChapterGrouped, index: number): { [key: string]: string } {
+    const fallbackGradients = [
+      'linear-gradient(135deg, rgba(34, 197, 94, 0.4) 0%, rgba(139, 92, 246, 0.4) 100%)',
+      'linear-gradient(135deg, rgba(248, 113, 163, 0.35) 0%, rgba(244, 63, 94, 0.35) 100%)',
+      'linear-gradient(135deg, rgba(56, 189, 248, 0.4) 0%, rgba(34, 211, 238, 0.4) 100%)',
+      'linear-gradient(135deg, rgba(34, 197, 94, 0.35) 0%, rgba(52, 211, 153, 0.35) 100%)',
+      'linear-gradient(135deg, rgba(250, 204, 21, 0.3) 0%, rgba(251, 146, 60, 0.3) 100%)'
+    ];
+    const gradient = fallbackGradients[index % fallbackGradients.length];
+    if (manga.mangaCoverUrl) {
+      return {
+        // subtle gradient overlay + cover image
+        'background-image': `${gradient}, url('${manga.mangaCoverUrl}')`,
+        'background-size': 'cover',
+        'background-position': 'center',
+        'background-repeat': 'no-repeat'
+      };
+    }
+    return {
+      background: gradient,
+      'background-size': 'cover',
+      'background-position': 'center',
+      'background-repeat': 'no-repeat'
+    };
   }
 
   mangaKey(group: ChapterGrouped): string {

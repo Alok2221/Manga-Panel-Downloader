@@ -1,10 +1,10 @@
 package com.mangapanel.downloader.service;
 
-import com.mangapanel.downloader.dto.ChapterDto;
-import com.mangapanel.downloader.dto.ChapterGroupedDto;
 import com.mangapanel.downloader.entity.Chapter;
 import com.mangapanel.downloader.repository.ChapterRepository;
 import com.mangapanel.downloader.repository.PanelRepository;
+import com.mangapanel.downloader.web.dto.ChapterDto;
+import com.mangapanel.downloader.web.dto.ChapterGroupedDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,12 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @Service
@@ -43,15 +38,12 @@ public class ChapterService {
         return chapterRepository.findAll(pageable).map(this::toDto);
     }
 
-    public Page<ChapterDto> search(String title, BigDecimal chapterNum, Pageable pageable) {
+    public Page<ChapterDto> search(String title, BigDecimal chapterNum, String volume, Pageable pageable) {
         String titleParam = (title != null && !title.isBlank()) ? title.trim() : "";
-        return chapterRepository.search(titleParam, chapterNum, pageable).map(this::toDto);
+        String volumeParam = (volume != null && !volume.isBlank()) ? volume.trim() : "";
+        return chapterRepository.search(titleParam, chapterNum, volumeParam, pageable).map(this::toDto);
     }
 
-    /**
-     * Returns chapters grouped by manga and then by volume, for the Read page.
-     * Filters by manga title (substring), chapter number (exact), volume (substring).
-     */
     public List<ChapterGroupedDto> findGroupedByMangaAndVolume(String title, BigDecimal chapterNum, String volume) {
         String titleParam = (title != null && !title.isBlank()) ? title.trim() : null;
         String volumeParam = (volume != null && !volume.isBlank()) ? volume.trim() : null;
@@ -71,7 +63,7 @@ public class ChapterService {
             List<ChapterGroupedDto.VolumeGroupDto> volumes = new ArrayList<>();
             List<String> volumeKeys = new ArrayList<>(mangaEntry.getValue().keySet());
 
-            volumeKeys.sort((a, b) -> compareVolumeKeys(a, b));
+            volumeKeys.sort(ChapterService::compareVolumeKeys);
             for (String volKey : volumeKeys) {
                 List<ChapterDto> chapterDtos = mangaEntry.getValue().get(volKey);
                 if (chapterDtos != null) {
@@ -87,9 +79,16 @@ public class ChapterService {
                     .findFirst()
                     .map(ChapterDto::getMangaId)
                     .orElse(null);
+            String coverUrl = chapters.stream()
+                    .filter(c -> c.getManga() != null && mangaEntry.getKey().equals(c.getManga().getTitle()))
+                    .map(c -> c.getManga().getCoverUrl())
+                    .filter(u -> u != null && !u.isBlank())
+                    .findFirst()
+                    .orElse(null);
             result.add(ChapterGroupedDto.builder()
                     .mangaId(mangaId)
                     .mangaTitle(mangaEntry.getKey())
+                    .mangaCoverUrl(coverUrl)
                     .volumes(volumes)
                     .build());
         }
@@ -102,7 +101,7 @@ public class ChapterService {
         String va = (a == null || a.isBlank()) ? "none" : a;
         String vb = (b == null || b.isBlank()) ? "none" : b;
         if ("none".equalsIgnoreCase(va) && "none".equalsIgnoreCase(vb)) return 0;
-        if ("none".equalsIgnoreCase(va)) return 1; // none last
+        if ("none".equalsIgnoreCase(va)) return 1;
         if ("none".equalsIgnoreCase(vb)) return -1;
 
         BigDecimal na = parseNumericOrNull(va);
@@ -114,12 +113,13 @@ public class ChapterService {
     }
 
     private static int compareChapterNumbers(BigDecimal a, BigDecimal b, Long idA, Long idB) {
-        if (a == null && b == null) return Long.compare(idA != null ? idA : 0L, idB != null ? idB : 0L);
+        int compare = Long.compare(idA != null ? idA : 0L, idB != null ? idB : 0L);
+        if (a == null && b == null) return compare;
         if (a == null) return 1;
         if (b == null) return -1;
         int cmp = a.compareTo(b);
         if (cmp != 0) return cmp;
-        return Long.compare(idA != null ? idA : 0L, idB != null ? idB : 0L);
+        return compare;
     }
 
     private static BigDecimal parseNumericOrNull(String s) {
@@ -141,10 +141,6 @@ public class ChapterService {
         });
     }
 
-    /**
-     * Reindex chapter IDs to be sequential 1, 2, 3, ... (by current id order).
-     * Use after deletions so that the first remaining chapter has id=1, etc.
-     */
     @Transactional
     public void reindexChapters() {
         List<Chapter> ordered = chapterRepository.findAllByOrderByIdAsc();
@@ -178,7 +174,8 @@ public class ChapterService {
         } catch (Exception e) {
             try {
                 jdbcTemplate.execute("SELECT setval('chapter_id_seq', " + Math.max(1, maxId) + ")");
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
     }
 
@@ -196,6 +193,7 @@ public class ChapterService {
                 .downloadedAt(c.getDownloadedAt())
                 .language(c.getLanguage())
                 .volume(c.getVolume())
+                .scanlationGroup(c.getScanlationGroup())
                 .build();
     }
 

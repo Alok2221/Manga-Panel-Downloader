@@ -1,12 +1,12 @@
 package com.mangapanel.downloader.service;
 
-import com.mangapanel.downloader.client.AtHomeResponse;
-import com.mangapanel.downloader.client.MangaSourceApiResponse;
-import com.mangapanel.downloader.client.MangaSourceClient;
-import com.mangapanel.downloader.client.MangaSourceMangaResponse;
 import com.mangapanel.downloader.entity.Chapter;
 import com.mangapanel.downloader.entity.Manga;
 import com.mangapanel.downloader.entity.Panel;
+import com.mangapanel.downloader.integration.MangaSourceClient;
+import com.mangapanel.downloader.integration.mangadex.dto.AtHomeResponse;
+import com.mangapanel.downloader.integration.mangadex.dto.MangadexChapterResponse;
+import com.mangapanel.downloader.integration.mangadex.dto.MangadexMangaResponse;
 import com.mangapanel.downloader.repository.ChapterRepository;
 import com.mangapanel.downloader.repository.MangaRepository;
 import com.mangapanel.downloader.repository.PanelRepository;
@@ -29,9 +29,6 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class ChapterDownloadService {
 
-    private static final int MAX_RETRIES = 3;
-    private static final int MAX_FILE_SIZE_BYTES = 50 * 1024 * 1024;
-
     private final MangaSourceClient mangaSourceClient;
     private final MangaRepository mangaRepository;
     private final ChapterRepository chapterRepository;
@@ -52,21 +49,26 @@ public class ChapterDownloadService {
             throw new IllegalArgumentException("URL must be a MangaDex chapter URL (https://mangadex.org/chapter/...)");
         }
         log.info("Fetching MangaDex chapter metadata: {}", chapterId);
-        MangaSourceApiResponse chapterResp = mangaSourceClient.fetchChapter(chapterId).block();
+        MangadexChapterResponse chapterResp = mangaSourceClient.fetchChapter(chapterId).block();
         if (chapterResp == null || chapterResp.getData() == null || chapterResp.getData().getAttributes() == null) {
             throw new IllegalStateException("Chapter not found or invalid response from MangaDex");
         }
-        MangaSourceApiResponse.ChapterData data = chapterResp.getData();
+        MangadexChapterResponse.ChapterData data = chapterResp.getData();
         String mangaId = data.getRelationships() == null ? null : data.getRelationships().stream()
                 .filter(r -> "manga".equals(r.getType()))
-                .map(MangaSourceApiResponse.MangaSourceRelationship::getId)
+                .map(MangadexChapterResponse.MangadexRelationship::getId)
+                .findFirst()
+                .orElse(null);
+        String scanlationGroupId = data.getRelationships() == null ? null : data.getRelationships().stream()
+                .filter(r -> "scanlation_group".equals(r.getType()))
+                .map(MangadexChapterResponse.MangadexRelationship::getId)
                 .findFirst()
                 .orElse(null);
 
         String mangaTitle = "Unknown";
         if (mangaId != null) {
             try {
-                MangaSourceMangaResponse mangaResp = mangaSourceClient.fetchManga(mangaId).block();
+                MangadexMangaResponse mangaResp = mangaSourceClient.fetchManga(mangaId).block();
                 if (mangaResp != null && mangaResp.getData() != null && mangaResp.getData().getAttributes() != null
                         && mangaResp.getData().getAttributes().getTitle() != null
                         && !mangaResp.getData().getAttributes().getTitle().isEmpty()) {
@@ -88,10 +90,30 @@ public class ChapterDownloadService {
 
         String chapterTitle = data.getAttributes().getTitle();
 
-        Manga manga = mangaRepository.save(Manga.builder()
+        Manga manga = Manga.builder()
                 .title(mangaTitle)
                 .createdAt(Instant.now())
-                .build());
+                .build();
+        if (mangaId != null) {
+            try {
+                var coverResp = mangaSourceClient.fetchCoversForManga(mangaId).block();
+                if (coverResp != null
+                        && coverResp.getData() != null
+                        && !coverResp.getData().isEmpty()
+                        && coverResp.getData().get(0).getAttributes() != null) {
+                    String fileName = coverResp.getData().get(0).getAttributes().getFileName();
+                    if (fileName != null && !fileName.isBlank()) {
+                        String baseUploads = mangaSourceClient.getUploadBaseUrl();
+                        String base = baseUploads.endsWith("/") ? baseUploads.substring(0, baseUploads.length() - 1) : baseUploads;
+                        String coverUrl = base + "/covers/" + mangaId + "/" + fileName + ".256.jpg";
+                        manga.setCoverUrl(coverUrl);
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("Could not fetch cover for manga {}: {}", mangaId, e.getMessage());
+            }
+        }
+        manga = mangaRepository.save(manga);
         String volume = data.getAttributes().getVolume();
         Chapter chapter = Chapter.builder()
                 .manga(manga)
@@ -104,6 +126,18 @@ public class ChapterDownloadService {
                 .sourceChapterId(chapterId)
                 .volume(volume != null && !volume.isBlank() ? volume : null)
                 .build();
+        if (scanlationGroupId != null) {
+            try {
+                var groupResp = mangaSourceClient.fetchGroup(scanlationGroupId).block();
+                if (groupResp != null
+                        && groupResp.getData() != null
+                        && groupResp.getData().getAttributes() != null) {
+                    chapter.setScanlationGroup(groupResp.getData().getAttributes().getName());
+                }
+            } catch (Exception e) {
+                log.warn("Could not fetch scanlation group {}: {}", scanlationGroupId, e.getMessage());
+            }
+        }
         chapter = chapterRepository.save(chapter);
         log.info("Created MangaDex chapter id={}, panels to download will be resolved via at-home", chapter.getId());
         return chapter;
@@ -157,7 +191,8 @@ public class ChapterDownloadService {
 
     private boolean fetchAndSaveMangaDexPanel(Chapter chapter, String filename, String imageUrl, int pageNumber) {
         int timeoutSeconds = mangaSourceClient.getHttpTimeoutSeconds();
-        for (int attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        int maxRetries = Math.max(1, mangaSourceClient.getRetryAttempts());
+        for (int attempt = 0; attempt < maxRetries; attempt++) {
             long start = System.currentTimeMillis();
             int bytesCount = 0;
             boolean success = false;
@@ -174,7 +209,7 @@ public class ChapterDownloadService {
                     byte[] bytes = entity.getBody();
                     if (bytes != null && bytes.length > 0) {
                         bytesCount = bytes.length;
-                        if (bytes.length > MAX_FILE_SIZE_BYTES) {
+                        if (bytes.length > mangaSourceClient.getMaxFileSizeBytes()) {
                             log.warn("Image too large ({} bytes), skipping: {}", bytes.length, imageUrl);
                             return false;
                         }
@@ -188,7 +223,6 @@ public class ChapterDownloadService {
                                 .fileSize((long) bytes.length)
                                 .format(format)
                                 .build();
-                        // Save directly to avoid lazy-loading chapter.panels in async context
                         panelRepository.save(panel);
                         log.debug("Saved panel {}/{} for chapter {}", pageNumber, chapter.getTotalPanels(), chapter.getId());
                         success = true;
@@ -198,13 +232,13 @@ public class ChapterDownloadService {
             } catch (WebClientResponseException e) {
                 int status = e.getStatusCode().value();
                 log.warn("Attempt {} failed for {}: HTTP {}", attempt + 1, imageUrl, status);
-                if (attempt == MAX_RETRIES - 1) {
-                    log.error("Giving up after {} attempts for {}", MAX_RETRIES, imageUrl);
+                if (attempt == maxRetries - 1) {
+                    log.error("Giving up after {} attempts for {}", maxRetries, imageUrl);
                     throw new RuntimeException("Failed to download image: HTTP " + status, e);
                 }
             } catch (Exception e) {
                 log.warn("Attempt {} failed for {}: {}", attempt + 1, imageUrl, e.getMessage());
-                if (attempt == MAX_RETRIES - 1) throw new RuntimeException(e);
+                if (attempt == maxRetries - 1) throw new RuntimeException(e);
             } finally {
                 int durationMs = (int) (System.currentTimeMillis() - start);
                 mangaSourceClient.reportAtHomeLoadResult(imageUrl, success, cached, bytesCount, durationMs);
@@ -217,5 +251,4 @@ public class ChapterDownloadService {
         }
         return false;
     }
-
 }

@@ -1,5 +1,8 @@
 .page {
   color: var(--text-main);
+  max-width: 70rem;
+  margin: 0 auto;
+  padding: 1.5rem;
 }
 
 .page-header {
@@ -56,7 +59,6 @@
   .meta { font-size: 0.78rem; opacity: 0.85; }
 }
 
-/* Search section - bar + filters */
 .search-section {
   background: rgba(15, 23, 42, 0.85);
   border-radius: 14px;
@@ -251,7 +253,12 @@
 
 .chapters-shell {
   border-radius: 14px;
-  padding: 0;
+  padding: 1rem 1.1rem 1.25rem;
+  background: radial-gradient(circle at top left, rgba(34, 197, 94, 0.08), transparent 65%),
+              radial-gradient(circle at bottom right, rgba(139, 92, 246, 0.12), transparent 70%),
+              rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55);
 }
 
 @media (max-width: 768px) {

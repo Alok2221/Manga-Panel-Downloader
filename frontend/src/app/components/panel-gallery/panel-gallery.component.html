@@ -9,6 +9,9 @@
         @if (ch.title) {
           <span class="chapter-subtitle">{{ ch.title }}</span>
         }
+        @if (ch.scanlationGroup) {
+          <span class="chapter-subtitle">Translated by {{ ch.scanlationGroup }}</span>
+        }
       </div>
       <div class="toolbar-nav">
         <button type="button" class="btn-chapter" [disabled]="prevChapterId() === null" (click)="openPrevChapter()">
@@ -23,6 +26,68 @@
         <button type="button" class="btn-fullscreen" (click)="toggleFullscreen()" title="Fullscreen">⛶</button>
       </div>
     </nav>
+    <nav class="reader-tabs" aria-label="Reader sections">
+      <button
+        type="button"
+        class="reader-tab"
+        [class.active]="tabMode() === 'pages'"
+        (click)="setTabMode('pages')"
+      >
+        Pages
+      </button>
+      <button
+        type="button"
+        class="reader-tab"
+        [class.active]="tabMode() === 'translation'"
+        (click)="setTabMode('translation')"
+      >
+        Translation
+      </button>
+    </nav>
+
+    @if (tabMode() === 'translation') {
+      <div class="translation-toolbar">
+        <div class="translation-actions">
+          @if (segments().length === 0) {
+            <button type="button" class="btn-translate" [disabled]="ocrLoading()" (click)="startOcr()">
+              {{ ocrLoading() ? 'Generating…' : 'Generate text map' }}
+            </button>
+          } @else {
+            <button type="button" class="btn-translate" [disabled]="translateLoading()" (click)="startTranslation()">
+              {{ translateLoading() ? 'Translating…' : 'Translate to Polish' }}
+            </button>
+          }
+        </div>
+        @if (segments().length > 0) {
+          <div class="view-toggle">
+            <button
+              type="button"
+              class="btn-toggle"
+              [class.active]="textViewMode() === 'original'"
+              (click)="setTextViewMode('original')"
+            >
+              Original
+            </button>
+            <button
+              type="button"
+              class="btn-toggle"
+              [class.active]="textViewMode() === 'translated'"
+              (click)="setTextViewMode('translated')"
+            >
+              Translated
+            </button>
+            <button
+              type="button"
+              class="btn-toggle"
+              [class.active]="textViewMode() === 'both'"
+              (click)="setTextViewMode('both')"
+            >
+              Both
+            </button>
+          </div>
+        }
+      </div>
+    }
 
     <div class="reader-fullscreen-target" [class.is-fullscreen]="isFullscreen()" #fullscreenTarget>
       <div class="reader-view">
@@ -31,7 +96,7 @@
             [src]="panelImageUrl(panel.id)"
             [alt]="'Page ' + panel.pageNumber"
             class="reader-image"
-            (click)="next()"
+            (click)="onImageClick($event)"
           />
         } @else if (panels().length === 0) {
           <p class="empty">No panels yet. The chapter may still be downloading.</p>
@@ -44,5 +109,23 @@
         (click)="exitFullscreen()"
       >×</button>
     </div>
+
+    @if (tabMode() === 'translation' && segments().length > 0 && currentPanelSegments().length > 0) {
+      <div class="panel-texts">
+        <h4 class="panel-texts-title">Ch. {{ ch.chapterNumber ?? '?' }} – Page {{ currentPanel()?.pageNumber ?? 0 }}</h4>
+        @for (seg of currentPanelSegments(); track seg.id) {
+          <div class="text-bubble">
+            @if (textViewMode() === 'original' || textViewMode() === 'both') {
+              <div class="text-original">{{ seg.sourceText }}</div>
+            }
+            @if (textViewMode() === 'translated' || textViewMode() === 'both') {
+              @if (seg.translatedText) {
+                <div class="text-translated">{{ seg.translatedText }}</div>
+              }
+            }
+          </div>
+        }
+      </div>
+    }
   }
 </div>

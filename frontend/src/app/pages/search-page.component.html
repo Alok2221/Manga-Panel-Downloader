@@ -6,29 +6,70 @@
     </div>
   </header>
 
-  <section class="search-controls">
-    <div class="field">
-      <label for="title">Manga title</label>
-      <input
-        id="title"
-        type="text"
-        placeholder="e.g. Bleach"
-        #titleInput
-        (input)="onSearchChange(titleInput.value, chapterInput.value)"
-      />
+  <section class="search-section">
+    <div class="search-container">
+      <div class="search-input-wrapper">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Search by manga name, chapter or volume..."
+          #searchInput
+          [value]="searchTitle()"
+          (input)="onTitleChange(searchInput.value)"
+        />
+      </div>
+      <button
+        type="button"
+        class="filter-button"
+        [class.active]="filtersOpen()"
+        (click)="toggleFilters()"
+        aria-expanded="filtersOpen()"
+      >
+        ▾ Filters
+      </button>
     </div>
 
-    <div class="field">
-      <label for="chapter">Chapter</label>
-      <input
-        id="chapter"
-        type="number"
-        min="0"
-        step="1"
-        placeholder="e.g. 336"
-        #chapterInput
-        (input)="onSearchChange(titleInput.value, chapterInput.value)"
-      />
+    <div class="filters-panel" [class.show]="filtersOpen()">
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label class="filter-label" for="filterTitle">Manga title</label>
+          <input
+            id="filterTitle"
+            type="text"
+            class="filter-input"
+            placeholder="e.g. Bleach"
+            #titleInput
+            [value]="searchTitle()"
+            (input)="onTitleChange(titleInput.value)"
+          />
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="filterChapter">Chapter</label>
+          <input
+            id="filterChapter"
+            type="text"
+            class="filter-input"
+            placeholder="e.g. 336"
+            #chapterInput
+            [value]="searchChapterNum() !== undefined ? searchChapterNum() : ''"
+            (input)="onChapterChange(chapterInput.value)"
+          />
+        </div>
+        <div class="filter-group">
+          <label class="filter-label" for="filterVolume">Volume</label>
+          <input
+            id="filterVolume"
+            type="text"
+            class="filter-input"
+            placeholder="e.g. 1"
+            #volumeInput
+            [value]="searchVolume() ?? ''"
+            (input)="onVolumeChange(volumeInput.value)"
+          />
+        </div>
+      </div>
+      <button type="button" class="apply-filters-btn" (click)="toggleFilters()">Apply filters</button>
     </div>
   </section>
 
@@ -37,6 +78,7 @@
       [refreshTrigger]="refreshListTrigger()"
       [searchTitle]="searchTitle()"
       [searchChapter]="searchChapterNum()"
+      [searchVolume]="searchVolume() ?? undefined"
     />
   </section>
 </div>

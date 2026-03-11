@@ -9,7 +9,7 @@
         @let mk = mangaKey(manga);
         @let totalCh = totalChapters(manga);
         <article class="manga-card">
-          <div class="manga-cover" [style]="coverStyle(i)"></div>
+          <div class="manga-cover" [ngStyle]="coverStyle(manga, i)"></div>
           <div class="manga-content">
             <div class="manga-header">
               <h3 class="manga-title">{{ manga.mangaTitle }}</h3>
@@ -66,7 +66,12 @@
                         <div class="chapter-item">
                           <div class="chapter-info">
                             <span class="chapter-number">Ch. {{ ch.chapterNumber ?? '?' }}</span>
-                            <span class="chapter-title">{{ ch.title ?? 'Chapter' }}</span>
+                            <span class="chapter-title">
+                              {{ ch.title ?? 'Chapter' }}
+                              @if (ch.scanlationGroup) {
+                                · <span class="chapter-group">Translated by {{ ch.scanlationGroup }}</span>
+                              }
+                            </span>
                           </div>
                           <div class="chapter-actions">
                             <button type="button" class="chapter-btn" (click)="readChapter(ch)">Read</button>

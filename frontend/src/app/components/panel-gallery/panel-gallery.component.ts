@@ -1,8 +1,15 @@
-import { Component, signal, OnInit, HostListener, ElementRef, ViewChild } from '@angular/core';
+import { Component, signal, OnInit, HostListener, ElementRef, ViewChild, computed } from '@angular/core';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../services/api.service';
 import { Chapter } from '../../models/chapter.model';
 import { Panel } from '../../models/panel.model';
+import { PanelTextSegment } from '../../models/panel-text-segment.model';
+
+const READER_LANG_PREF = 'readerLanguagePreference';
+const READER_TAB_PREF = 'readerActiveTab';
+
+type TextViewMode = 'original' | 'translated' | 'both';
+type ReaderTabMode = 'pages' | 'translation';
 
 @Component({
   selector: 'app-panel-gallery',
@@ -23,6 +30,19 @@ export class PanelGalleryComponent implements OnInit {
   sequenceLoading = signal(false);
   startAtEnd = signal(false);
 
+  segments = signal<PanelTextSegment[]>([]);
+  ocrLoading = signal(false);
+  translateLoading = signal(false);
+  textViewMode = signal<TextViewMode>('both');
+  tabMode = signal<ReaderTabMode>('pages');
+
+  currentPanelSegments = computed(() => {
+    const panel = this.currentPanel();
+    const segs = this.segments();
+    if (!panel || segs.length === 0) return [];
+    return segs.filter((s) => s.panelId === panel.id).sort((a, b) => a.sequenceIndex - b.sequenceIndex);
+  });
+
   constructor(
     private api: ApiService,
     private route: ActivatedRoute,
@@ -30,10 +50,20 @@ export class PanelGalleryComponent implements OnInit {
   ) {
     if (typeof document !== 'undefined') {
       document.addEventListener('fullscreenchange', () => this.isFullscreen.set(!!document.fullscreenElement));
+
+      const savedTab = localStorage.getItem(READER_TAB_PREF) as ReaderTabMode | null;
+      if (savedTab && (savedTab === 'pages' || savedTab === 'translation')) {
+        this.tabMode.set(savedTab);
+      }
     }
   }
 
   ngOnInit(): void {
+    const saved = localStorage.getItem(READER_LANG_PREF) as TextViewMode | null;
+    if (saved && ['original', 'translated', 'both'].includes(saved)) {
+      this.textViewMode.set(saved);
+    }
+
     this.route.queryParamMap.subscribe((qp) => {
       this.startAtEnd.set(qp.get('start') === 'last');
     });
@@ -53,6 +83,7 @@ export class PanelGalleryComponent implements OnInit {
     this.currentIndex.set(0);
     this.panels.set([]);
     this.chapter.set(null);
+    this.segments.set([]);
 
     this.api.getChapter(id).subscribe({
       next: (c) => {
@@ -74,6 +105,57 @@ export class PanelGalleryComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
+    });
+
+    this.api.getChapterTexts(id).subscribe({
+      next: (s) => this.segments.set(s || []),
+      error: () => this.segments.set([])
+    });
+  }
+
+  setTextViewMode(mode: TextViewMode): void {
+    this.textViewMode.set(mode);
+    localStorage.setItem(READER_LANG_PREF, mode);
+  }
+
+  setTabMode(mode: ReaderTabMode): void {
+    this.tabMode.set(mode);
+    try {
+      localStorage.setItem(READER_TAB_PREF, mode);
+    } catch {
+      // ignore storage errors in restricted environments
+    }
+  }
+
+  startOcr(): void {
+    const ch = this.chapter();
+    if (!ch || this.ocrLoading()) return;
+    this.ocrLoading.set(true);
+    this.api.startChapterOcr(ch.id).subscribe({
+      next: () => {
+        this.api.getChapterTexts(ch.id).subscribe({
+          next: (s) => this.segments.set(s || []),
+          error: () => {}
+        });
+        this.ocrLoading.set(false);
+      },
+      error: () => this.ocrLoading.set(false)
+    });
+  }
+
+  startTranslation(): void {
+    const ch = this.chapter();
+    if (!ch || this.translateLoading()) return;
+    this.translateLoading.set(true);
+    this.api.startChapterTranslation(ch.id).subscribe({
+      next: () => {
+        this.api.getChapterTexts(ch.id).subscribe({
+          next: (s) => this.segments.set(s || []),
+          error: () => {}
+        });
+        this.translateLoading.set(false);
+      },
+      error: () => this.translateLoading.set(false)
     });
   }
 
@@ -121,6 +203,23 @@ export class PanelGalleryComponent implements OnInit {
     const nextChapter = this.nextChapterId();
     if (nextChapter != null) {
       this.router.navigate(['/chapters', nextChapter]);
+    }
+  }
+
+  onImageClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement | null;
+    const width = target?.clientWidth ?? 0;
+    const clickX = (event as any).offsetX as number | undefined;
+
+    if (!width || clickX === undefined) {
+      this.next();
+      return;
+    }
+
+    if (clickX < width / 2) {
+      this.prev();
+    } else {
+      this.next();
     }
   }
 
