@@ -5,15 +5,15 @@ WORKDIR /app
 COPY pom.xml .
 COPY mvnw .
 COPY .mvn .mvn
+COPY backend backend
 
-RUN --mount=type=cache,target=/root/.m2 ./mvnw dependency:go-offline -B
-COPY src src
-RUN --mount=type=cache,target=/root/.m2 ./mvnw package -DskipTests -B
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -pl backend dependency:go-offline -B
+RUN --mount=type=cache,target=/root/.m2 ./mvnw -pl backend package -DskipTests -B
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 RUN apk add --no-cache dumb-init
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/backend/target/*.jar app.jar
 RUN adduser -D appuser && chown -R appuser /app
 USER appuser
 EXPOSE 8080
