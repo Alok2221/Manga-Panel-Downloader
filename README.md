@@ -161,17 +161,17 @@ If you deploy this project publicly, you must comply with the [current MangaDex 
 
 ```
 MangaPanel/
-├── src/main/java/.../downloader/
-│   ├── web/controller/   # ChapterController, MangadexController, PanelTextController
-│   ├── service/          # ChapterService, PanelTextService, PanelService, ...
-│   ├── persistence/repository/  # JPA repositories
-│   ├── domain/entity/    # Manga, Chapter, Panel, PanelTextSegment
-│   ├── integration/translator/  # TranslatorClient, DTOs for OCR/translate
-│   ├── config/
-│   └── web/dto/
-├── src/main/resources/
-│   ├── application.properties
-│   └── db/migration/     # Flyway (e.g. V5 panel_text_segment)
+├── backend/src/main/java/.../downloader/
+│        ├── web/controller/   # ChapterController, MangadexController, PanelTextController
+│        ├── service/          # ChapterService, PanelTextService, PanelService, ...
+│        ├── persistence/repository/  # JPA repositories
+│        ├── domain/entity/    # Manga, Chapter, Panel, PanelTextSegment
+│        ├── integration/translator/  # TranslatorClient, DTOs for OCR/translate
+│        ├── config/
+│        └── web/dto/
+│           └── src/main/resources/
+│              ├── application.properties
+│              └── db/migration/     # Flyway
 ├── translator-service/   # Python FastAPI: /ocr, /translate (OpenAI)
 ├── frontend/             # Angular SPA (Main, Search, Read, Reader + translation UI)
 ├── docker-compose.yml
