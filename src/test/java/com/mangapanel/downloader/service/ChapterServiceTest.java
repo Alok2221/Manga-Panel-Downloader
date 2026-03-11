@@ -1,11 +1,11 @@
 package com.mangapanel.downloader.service;
 
-import com.mangapanel.downloader.dto.ChapterDto;
-import com.mangapanel.downloader.dto.ChapterGroupedDto;
 import com.mangapanel.downloader.entity.Chapter;
 import com.mangapanel.downloader.entity.Manga;
 import com.mangapanel.downloader.repository.ChapterRepository;
 import com.mangapanel.downloader.repository.PanelRepository;
+import com.mangapanel.downloader.web.dto.ChapterDto;
+import com.mangapanel.downloader.web.dto.ChapterGroupedDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;

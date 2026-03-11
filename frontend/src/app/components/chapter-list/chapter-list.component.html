@@ -13,7 +13,12 @@
             @if (ch.title) {
               <span class="subtitle">{{ ch.title }}</span>
             }
-            <span class="meta">{{ (ch.panelsDownloaded ?? 0) }} / {{ ch.totalPanels }} panels · {{ ch.downloadedAt | date:'short' }}</span>
+            <span class="meta">
+              {{ (ch.panelsDownloaded ?? 0) }} / {{ ch.totalPanels }} panels · {{ ch.downloadedAt | date:'short' }}
+              @if (ch.scanlationGroup) {
+                · Translated by {{ ch.scanlationGroup }}
+              }
+            </span>
             @if (isDownloading(ch)) {
               <div class="progress-bar">
                 <div class="progress-fill" [style.width]="progressPercent(ch) + '%'"></div>

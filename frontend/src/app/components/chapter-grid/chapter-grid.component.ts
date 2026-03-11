@@ -20,6 +20,7 @@ export class ChapterGridComponent implements OnInit {
   loading = signal(true);
   searchTitle = input<string>('');
   searchChapter = input<number | undefined>(undefined);
+  searchVolume = input<string | undefined>(undefined);
   refreshTrigger = input<number>(0);
   downloadingZip = signal<number | null>(null);
 
@@ -28,6 +29,7 @@ export class ChapterGridComponent implements OnInit {
       this.refreshTrigger();
       this.searchTitle();
       this.searchChapter();
+      this.searchVolume();
       this.load(0);
     });
   }
@@ -38,8 +40,9 @@ export class ChapterGridComponent implements OnInit {
     this.loading.set(true);
     const title = this.searchTitle();
     const ch = this.searchChapter();
-    (title || ch != null
-      ? this.api.search(title, ch, page, 24)
+    const vol = this.searchVolume();
+    (title || ch != null || (vol != null && vol !== '')
+      ? this.api.search(title, ch, vol, page, 24)
       : this.api.getChapters(page, 24)
     ).subscribe({
       next: (p: ChapterPage) => {

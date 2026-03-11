@@ -19,6 +19,7 @@ export class ChapterListComponent implements OnInit {
   loading = signal(true);
   searchTitle = input<string>('');
   searchChapter = input<number | undefined>(undefined);
+  searchVolume = input<string | undefined>(undefined);
   refreshTrigger = input<number>(0);
   chapterDeleted = output<number>();
 
@@ -27,6 +28,7 @@ export class ChapterListComponent implements OnInit {
       this.refreshTrigger();
       this.searchTitle();
       this.searchChapter();
+      this.searchVolume();
       this.load(0);
     });
   }
@@ -37,8 +39,9 @@ export class ChapterListComponent implements OnInit {
     this.loading.set(true);
     const title = this.searchTitle();
     const ch = this.searchChapter();
-    (title || ch != null
-      ? this.api.search(title, ch, page, 20)
+    const vol = this.searchVolume();
+    (title || ch != null || (vol != null && vol !== '')
+      ? this.api.search(title, ch, vol, page, 20)
       : this.api.getChapters(page, 20)
     ).subscribe({
       next: (p: ChapterPage) => {

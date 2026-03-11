@@ -54,7 +54,8 @@ body {
   font-size: 16px;
   line-height: 1.5;
   color: var(--text-main);
-  background: radial-gradient(circle at top left, #0b1220, #020617 55%, #000000 100%);
+  /* Full-page background from backend static resources */
+  background: #000 url('http://localhost:8080/background.png') center center / cover no-repeat fixed;
 }
 
 body {

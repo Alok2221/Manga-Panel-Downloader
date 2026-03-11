@@ -10,6 +10,7 @@ export interface Chapter {
   downloadedAt: string;
   language: string | null;
   volume?: string | null;
+   scanlationGroup?: string | null;
 }
 
 export interface VolumeGroup {
@@ -20,6 +21,7 @@ export interface VolumeGroup {
 export interface ChapterGrouped {
   mangaId: number | null;
   mangaTitle: string;
+  mangaCoverUrl?: string | null;
   volumes: VolumeGroup[];
 }
 

@@ -11,7 +11,12 @@
           <div class="card-body">
             <h3 class="card-title">{{ ch.mangaTitle ?? 'Manga' }}</h3>
             <p class="card-meta">Ch. {{ ch.chapterNumber ?? '?' }}{{ ch.title ? ' · ' + ch.title : '' }}</p>
-            <p class="card-info">{{ (ch.panelsDownloaded ?? 0) }} / {{ ch.totalPanels }} panels · {{ ch.downloadedAt | date:'short' }}</p>
+            <p class="card-info">
+              {{ (ch.panelsDownloaded ?? 0) }} / {{ ch.totalPanels }} panels · {{ ch.downloadedAt | date:'short' }}
+              @if (ch.scanlationGroup) {
+                · Translated by {{ ch.scanlationGroup }}
+              }
+            </p>
             @if (isDownloading(ch)) {
               <div class="progress-bar">
                 <div class="progress-fill" [style.width]="progressPercent(ch) + '%'"></div>
