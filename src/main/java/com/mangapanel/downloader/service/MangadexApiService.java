@@ -1,10 +1,10 @@
 package com.mangapanel.downloader.service;
 
-import com.mangapanel.downloader.client.MangaSourceClient;
-import com.mangapanel.downloader.client.dto.MangadexChapterFeedResponse;
-import com.mangapanel.downloader.client.dto.MangadexMangaListResponse;
-import com.mangapanel.downloader.dto.MangadexChapterDto;
-import com.mangapanel.downloader.dto.MangadexMangaDto;
+import com.mangapanel.downloader.integration.MangaSourceClient;
+import com.mangapanel.downloader.integration.mangadex.dto.MangadexChapterFeedResponse;
+import com.mangapanel.downloader.integration.mangadex.dto.MangadexMangaListResponse;
+import com.mangapanel.downloader.web.dto.MangadexChapterDto;
+import com.mangapanel.downloader.web.dto.MangadexMangaDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
