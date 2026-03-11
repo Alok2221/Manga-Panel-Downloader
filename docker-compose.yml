@@ -1,4 +1,17 @@
 services:
+  translator-service:
+    build:
+      context: ./translator-service
+      dockerfile: Dockerfile
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL_OCR: ${OPENAI_MODEL_OCR:-gpt-4o-mini}
+      OPENAI_MODEL_TRANSLATE: ${OPENAI_MODEL_TRANSLATE:-gpt-4o-mini}
+      TRANSLATOR_LOG_LEVEL: ${TRANSLATOR_LOG_LEVEL:-INFO}
+      MAX_SEGMENTS_PER_REQUEST: ${MAX_SEGMENTS_PER_REQUEST:-100}
+    ports:
+      - "8000:8000"
+
   postgres:
     image: postgres:16-alpine
     environment:
@@ -24,6 +37,7 @@ services:
       DATABASE_USER: ${POSTGRES_USER:-postgres}
       DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
       STORAGE_PATH: /data/panels
+      TRANSLATOR_BASE_URL: http://translator-service:8000
     volumes:
       - panel_storage:/data/panels
     user: "0:0"

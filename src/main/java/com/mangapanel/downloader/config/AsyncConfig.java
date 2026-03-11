@@ -1,5 +1,6 @@
 package com.mangapanel.downloader.config;
 
+import com.mangapanel.downloader.config.properties.DownloadExecutorProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -12,12 +13,15 @@ import java.util.concurrent.Executor;
 public class AsyncConfig {
 
     @Bean(name = "downloadExecutor")
-    public Executor downloadExecutor() {
+    public Executor downloadExecutor(DownloadExecutorProperties props) {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(2);
-        executor.setMaxPoolSize(4);
-        executor.setQueueCapacity(16);
-        executor.setThreadNamePrefix("download-");
+        int core = Math.max(1, props.corePoolSize());
+        int max = props.maxPoolSize() > 0 ? Math.max(core, props.maxPoolSize()) : core;
+        int queue = Math.max(1, props.queueCapacity());
+        executor.setCorePoolSize(core);
+        executor.setMaxPoolSize(max);
+        executor.setQueueCapacity(queue);
+        executor.setThreadNamePrefix(props.threadNamePrefix() != null ? props.threadNamePrefix() : "download-");
         executor.initialize();
         return executor;
     }
